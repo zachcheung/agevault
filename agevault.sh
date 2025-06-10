@@ -35,7 +35,9 @@ agevault_encrypt() {
   check_age_recipients_file
 
   for f in "$@"; do
-    # TODO: check existence?
+    if [ -e "$f.age" ]; then
+      echo "[WARN] '$f.age' already exists" >&2
+    fi
     age -R "$AGE_RECIPIENTS_FILE" -o "$f.age" "$f"
     echo "'$f' is encrypted to '$f.age'."
   done
@@ -52,7 +54,9 @@ agevault_decrypt() {
       *.age) d=${f%.age} ;;
       *) echo "'$f' is not a .age file" >&2; continue ;;
     esac
-    # TODO: check existence?
+    if [ -e "$d" ]; then
+      echo "[WARN] '$d' already exists" >&2
+    fi
     age -d -i "$AGE_SECRET_KEY_FILE" -o "$d" "$f"
     echo "'$f' is decrypted to '$d'."
   done
