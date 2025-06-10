@@ -2,6 +2,10 @@
 
 set -eu
 
+if [ -f /etc/alpine-release ]; then
+  apk add --no-cache age coreutils curl
+fi
+
 # Setup test environment
 TEST_DIR="$(mktemp -d)"
 AGE_SECRET_KEY_FILE="$TEST_DIR/age.key"
