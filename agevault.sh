@@ -103,23 +103,54 @@ agevault_edit() {
   for f in "$@"; do
     base=$(basename "$f" .age)
     tmp_file="$(mktemp -p "$TMP_DIR" "agevault-edit-XXXXXX.$base")"
+    encrypted_file_exists=false
 
-    if [ -e "$f" ]; then
-      agevault_cat "$f" > "$tmp_file"
-    else
-      f="${f%.age}.age"
-      if [ -e "$f" ]; then
-        agevault_cat "$f" > "$tmp_file"
-      fi
-    fi
+    case "$f" in
+      *.age)
+        # edit database.yml.age, it is fine if encrypted file does not exist
+        encrypted_file="$f"
+        if [ -e "$encrypted_file" ]; then
+          encrypted_file_exists=true
+          agevault_cat "$encrypted_file" > "$tmp_file"
+        fi
+        ;;
+      *)
+        # edit database.yml
+        encrypted_file="$f.age"
+        if [ ! -e "$f" ]; then
+          # database.yml does not exist, assuming user wants to edit database.yml.age
+          if [ -e "$encrypted_file" ]; then
+            encrypted_file_exists=true
+            agevault_cat "$encrypted_file" > "$tmp_file"
+          fi
+        else
+          # database.yml exists
+          if [ ! -e "$encrypted_file" ]; then
+            # database.yml.age does not exist, assuming user wants to edit database.yml.age
+            cp "$f" "$tmp_file"
+          else
+            # database.yml.age exists
+            echo "[WARN] both '$f' and '$encrypted_file' exist." >&2
+            echo "[WARN] did you mean to edit '$encrypted_file'?" >&2
+            echo "[WARN] consider using: agevault encrypt '$f'" >&2
+            continue
+          fi
+        fi
+        ;;
+    esac
 
     orig_hash=$(sha256sum "$tmp_file" | cut -d' ' -f1)
     ${EDITOR:-vi} "$tmp_file"
     new_hash=$(sha256sum "$tmp_file" | cut -d' ' -f1)
 
-    if [ "$orig_hash" != "$new_hash" ]; then
-      age -R "$AGE_RECIPIENTS_FILE" -o "$f" "$tmp_file"
-      echo "'$f' is updated"
+    if [ "$orig_hash" != "$new_hash" ] || { [ ! -s "$tmp_file" ] && [ "$encrypted_file_exists" = false ]; }; then
+      # file changes or (file is empty and encrypted_file does not exist)
+      age -R "$AGE_RECIPIENTS_FILE" -o "$encrypted_file" "$tmp_file"
+      if [ "$encrypted_file_exists" = false ]; then
+        echo "'$encrypted_file' is encrypted"
+      else
+        echo "'$encrypted_file' is updated"
+      fi
     fi
     rm -f -- "$tmp_file"
   done
