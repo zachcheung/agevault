@@ -109,9 +109,14 @@ agevault_edit() {
       fi
     fi
 
+    orig_hash=$(sha256sum "$tmp_file" | cut -d' ' -f1)
     ${EDITOR:-vi} "$tmp_file"
-    age -R "$AGE_RECIPIENTS_FILE" -o "$f" "$tmp_file"
-    # TODO
+    new_hash=$(sha256sum "$tmp_file" | cut -d' ' -f1)
+
+    if [ "$orig_hash" != "$new_hash" ]; then
+      age -R "$AGE_RECIPIENTS_FILE" -o "$f" "$tmp_file"
+      echo "'$f' is updated"
+    fi
     rm -f -- "$tmp_file"
   done
 }
