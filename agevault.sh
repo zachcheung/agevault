@@ -15,15 +15,28 @@ make_tmp_dir() {
   fi
 }
 
-check_age_recipients_file() {
-  if [ ! -r "$AGE_RECIPIENTS_FILE" ]; then
-    if [ ! -e "$AGE_RECIPIENTS_FILE" ]; then
-      echo "'$AGE_RECIPIENTS_FILE' not found" >&2
+get_age_recipients_file() {
+  if [ $# -eq 0 ]; then
+    echo "missing file" >&2
+    return 1
+  fi
+
+  f="$1"
+  case "$AGE_RECIPIENTS_FILE" in
+    */*) rf="$AGE_RECIPIENTS_FILE" ;;
+    *)   rf="$(dirname "$f")/$AGE_RECIPIENTS_FILE" ;;
+  esac
+
+  if [ ! -r "$rf" ]; then
+    if [ ! -e "$rf" ]; then
+      echo "'$rf' not found" >&2
     else
-      echo "'$AGE_RECIPIENTS_FILE' is not readable" >&2
+      echo "'$rf' is not readable" >&2
     fi
     return 1
   fi
+
+  printf "$rf"
 }
 
 agevault_encrypt() {
@@ -32,13 +45,12 @@ agevault_encrypt() {
     return 1
   fi
 
-  check_age_recipients_file
-
   for f in "$@"; do
+    rf=$(get_age_recipients_file "$f")
     if [ -e "$f.age" ]; then
       echo "[WARN] '$f.age' already exists" >&2
     fi
-    age -R "$AGE_RECIPIENTS_FILE" -o "$f.age" "$f"
+    age -R "$rf" -o "$f.age" "$f"
     echo "'$f' is encrypted to '$f.age'."
   done
 }
@@ -80,12 +92,12 @@ agevault_reencrypt() {
   fi
 
   make_tmp_dir
-  check_age_recipients_file
 
   for f in "$@"; do
+    rf=$(get_age_recipients_file "$f")
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
-    age -R "$AGE_RECIPIENTS_FILE" -o "$f" "$tmp_file"
+    age -R "$rf" -o "$f" "$tmp_file"
     echo "'$f' is reencrypted"
     rm -f -- "$tmp_file"
   done
@@ -98,9 +110,9 @@ agevault_edit() {
   fi
 
   make_tmp_dir
-  check_age_recipients_file
 
   for f in "$@"; do
+    rf=$(get_age_recipients_file "$f")
     base=$(basename "$f" .age)
     tmp_file="$(mktemp -p "$TMP_DIR" "agevault-edit-XXXXXX.$base")"
     encrypted_file_exists=false
@@ -145,7 +157,7 @@ agevault_edit() {
 
     if [ "$orig_hash" != "$new_hash" ] || { [ ! -s "$tmp_file" ] && [ "$encrypted_file_exists" = false ]; }; then
       # file changes or (file is empty and encrypted_file does not exist)
-      age -R "$AGE_RECIPIENTS_FILE" -o "$encrypted_file" "$tmp_file"
+      age -R "$rf" -o "$encrypted_file" "$tmp_file"
       if [ "$encrypted_file_exists" = false ]; then
         echo "'$encrypted_file' is encrypted"
       else

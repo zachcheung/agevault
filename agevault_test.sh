@@ -19,7 +19,6 @@ trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 # Generate key pair
-cd "$TEST_DIR"
 age-keygen -o "$AGE_SECRET_KEY_FILE" 2> /dev/null
 age-keygen -y -o "$AGE_RECIPIENTS_FILE" "$AGE_SECRET_KEY_FILE"
 
