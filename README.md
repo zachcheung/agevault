@@ -5,8 +5,7 @@
 ### 📦 Installation
 
 ```sh
-sudo curl -fsSL https://raw.githubusercontent.com/zachcheung/agevault/main/agevault.sh -o /usr/local/bin/agevault
-sudo chmod +x /usr/local/bin/agevault
+sudo curl -fsSL https://raw.githubusercontent.com/zachcheung/agevault/main/agevault.sh -o /usr/local/bin/agevault && sudo chmod +x /usr/local/bin/agevault
 ```
 
 #### 🧠 Shell Completion
