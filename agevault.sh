@@ -218,8 +218,57 @@ Commands:
   key-get       Fetch public key from key server
   key-add       Add one or more recipients
   key-readd     Overwrite recipients
+  completion    Print shell completion script (bash or zsh)
   help          Show this message
 EOF
+}
+
+agevault_completion() {
+  shell=${1:-}
+  case "$shell" in
+    bash)
+      cat <<'EOF'
+# bash completion for agevault
+_comp_cmd_agevault() {
+  local cur prev
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  local subcommands="encrypt decrypt cat reencrypt edit key-add key-get key-readd help completion"
+
+  if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $(compgen -W "$subcommands" -- "$cur") )
+    return 0
+  fi
+
+  case "${COMP_WORDS[1]}" in
+    cat|edit|decrypt|reencrypt|encrypt)
+      COMPREPLY=( $(compgen -f -- "$cur") )
+      return 0
+      ;;
+    key-add|key-get|key-readd)
+      return 0
+      ;;
+  esac
+}
+complete -F _comp_cmd_agevault -o filenames agevault
+EOF
+      ;;
+    zsh)
+      cat <<'EOF'
+#compdef agevault
+
+_arguments -C \
+  '1:command:(encrypt decrypt cat reencrypt edit key-add key-get key-readd help completion)' \
+  '*::filename:_files'
+EOF
+      ;;
+    *)
+      echo "Usage: agevault completion <bash|zsh>" >&2
+      return 1
+      ;;
+  esac
 }
 
 agevault() {
@@ -235,6 +284,7 @@ agevault() {
     key-add) agevault_key_add "$@" ;;
     key-get) agevault_key_get "$@" ;;
     key-readd) agevault_key_readd "$@" ;;
+    completion) agevault_completion "$@" ;;
     help) agevault_help ;;
     *) echo "Unknown command: $cmd" >&2; exit 1 ;;
   esac
