@@ -11,13 +11,22 @@ sudo chmod +x /usr/local/bin/agevault
 
 #### 🧠 Shell Completion
 
-- Bash
+- **Bash**
+
+To install completion globally (recommended):
 
 ```sh
-agevault completion bash | sudo tee /usr/share/bash-completion/completions/agevault
+agevault completion bash | sudo tee /usr/share/bash-completion/completions/agevault > /dev/null
 ```
 
-- Zsh
+Or, to configure it in your `~/.bashrc` for per-user usage:
+
+```sh
+# ~/.bashrc
+source <(agevault completion bash)
+```
+
+- **Zsh**
 
 ```sh
 agevault completion zsh | sudo tee /usr/local/share/zsh/site-functions/_agevault
