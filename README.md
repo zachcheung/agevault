@@ -28,7 +28,7 @@ source <(agevault completion bash)
 - **Zsh**
 
 ```sh
-agevault completion zsh | sudo tee /usr/local/share/zsh/site-functions/_agevault
+agevault completion zsh | sudo tee /usr/local/share/zsh/site-functions/_agevault > /dev/null
 ```
 
 Ensure Zsh completion is initialized:
