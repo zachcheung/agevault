@@ -43,17 +43,19 @@ compinit
 
 agevault expects an age recipients file named `.age.txt` in the same directory as the secret file.
 
-| Command    | Description                                            |
-|------------|--------------------------------------------------------|
-| encrypt    | Encrypt one or more files using the recipients file    |
-| decrypt    | Decrypt .age files                                     |
-| cat        | Print decrypted content to stdout                      |
-| reencrypt  | Re-encrypt files (e.g., after updating recipients)     |
-| edit       | Decrypt, open in editor, then re-encrypt after editing |
-| key-add    | Add a public key from a remote key server              |
-| key-readd  | Reset and re-add a list of public keys                 |
-| key-get    | Fetch and print a public key from the key server       |
-| completion | Print bash or zsh completion code                      |
+| Command    | Description                                            | Example                        |
+|------------|--------------------------------------------------------|--------------------------------|
+| encrypt    | Encrypt one or more files using the recipients file    | agevault encrypt secrets       |
+| decrypt    | Decrypt .age files                                     | agevault decrypt secrets.age   |
+| cat        | Print decrypted content to stdout                      | agevault cat secrets.age       |
+| reencrypt  | Re-encrypt files (e.g., after updating recipients)     | agevault reencrypt secrets.age |
+| edit       | Decrypt, open in editor, then re-encrypt after editing | agevault edit secrets.age      |
+| key-add    | Add a public key from a remote key server              | agevault key-add alice         |
+| key-readd  | Reset and re-add a list of public keys                 | agevault key-readd alice bob   |
+| key-get    | Fetch and print a public key from the key server       | agevault key-get alice         |
+| completion | Print bash or zsh completion code                      | agevault completion zsh        |
+
+In most cases, you can simply use `agevault edit` — it handles encryption, decryption, and editing of secrets in one step.
 
 #### 📂 Example
 
