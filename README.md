@@ -63,8 +63,8 @@ agevault expects an age recipients file named `.age.txt` in the same directory a
 # mkdir -pm 0700 ~/.age
 # age-keygen -o ~/.age/age.key && age-keygen -y -o ~/.age/age.pub ~/.age/age.key
 # cp ~/.age/age.pub .age.txt
-
 # echo "my secret" > secrets
+
 # agevault encrypt secrets
 'secrets' is encrypted to 'secrets.age'.
 # rm secrets
@@ -79,7 +79,7 @@ my secret
 my secret
 
 # agevault edit secrets.age
-'secrets.age' is updated
+'secrets.age' is updated.
 
 # agevault cat secrets.age
 my new secret
@@ -95,7 +95,7 @@ age: error: no identity matched any of the recipients
 # cat ./age.pub >> .age.txt
 
 # agevault reencrypt secrets.age
-'secrets.age' is reencrypted
+'secrets.age' is reencrypted.
 
 # export AGE_SECRET_KEY_FILE=./age.key
 # agevault cat secrets.age
