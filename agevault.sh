@@ -17,7 +17,7 @@ make_tmp_dir() {
 
 get_age_recipients_file() {
   if [ $# -eq 0 ]; then
-    echo "missing file" >&2
+    echo "missing file." >&2
     return 1
   fi
 
@@ -29,9 +29,9 @@ get_age_recipients_file() {
 
   if [ ! -r "$rf" ]; then
     if [ ! -e "$rf" ]; then
-      echo "'$rf' not found" >&2
+      echo "'$rf' not found." >&2
     else
-      echo "'$rf' is not readable" >&2
+      echo "'$rf' is not readable." >&2
     fi
     return 1
   fi
@@ -41,14 +41,14 @@ get_age_recipients_file() {
 
 agevault_encrypt() {
   if [ $# -eq 0 ]; then
-    echo "missing files" >&2
+    echo "missing files." >&2
     return 1
   fi
 
   for f in "$@"; do
     rf=$(get_age_recipients_file "$f")
     if [ -e "$f.age" ]; then
-      echo "[WARN] '$f.age' already exists" >&2
+      echo "[WARN] '$f.age' already exists." >&2
     fi
     age -R "$rf" -o "$f.age" "$f"
     echo "'$f' is encrypted to '$f.age'."
@@ -57,17 +57,17 @@ agevault_encrypt() {
 
 agevault_decrypt() {
   if [ $# -eq 0 ]; then
-    echo "missing files" >&2
+    echo "missing files." >&2
     return 1
   fi
 
   for f in "$@"; do
     case "$f" in
       *.age) d=${f%.age} ;;
-      *) echo "'$f' is not a .age file" >&2; continue ;;
+      *) echo "'$f' is not a .age file." >&2; continue ;;
     esac
     if [ -e "$d" ]; then
-      echo "[WARN] '$d' already exists" >&2
+      echo "[WARN] '$d' already exists." >&2
     fi
     age -d -i "$AGE_SECRET_KEY_FILE" -o "$d" "$f"
     echo "'$f' is decrypted to '$d'."
@@ -76,7 +76,7 @@ agevault_decrypt() {
 
 agevault_cat() {
   if [ $# -eq 0 ]; then
-    echo "missing files" >&2
+    echo "missing files." >&2
     return 1
   fi
 
@@ -87,7 +87,7 @@ agevault_cat() {
 
 agevault_reencrypt() {
   if [ $# -eq 0 ]; then
-    echo "missing files" >&2
+    echo "missing files." >&2
     return 1
   fi
 
@@ -98,14 +98,14 @@ agevault_reencrypt() {
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
     age -R "$rf" -o "$f" "$tmp_file"
-    echo "'$f' is reencrypted"
+    echo "'$f' is reencrypted."
     rm -f -- "$tmp_file"
   done
 }
 
 agevault_edit() {
   if [ $# -eq 0 ]; then
-    echo "missing files" >&2
+    echo "missing files." >&2
     return 1
   fi
 
@@ -144,7 +144,7 @@ agevault_edit() {
             # database.yml.age exists
             echo "[WARN] both '$f' and '$encrypted_file' exist." >&2
             echo "[WARN] did you mean to edit '$encrypted_file'?" >&2
-            echo "[WARN] consider using: agevault encrypt '$f'" >&2
+            echo "[WARN] consider using: agevault encrypt '$f'." >&2
             continue
           fi
         fi
@@ -159,9 +159,9 @@ agevault_edit() {
       # file changes or (file is empty and encrypted_file does not exist)
       age -R "$rf" -o "$encrypted_file" "$tmp_file"
       if [ "$encrypted_file_exists" = false ]; then
-        echo "'$encrypted_file' is encrypted"
+        echo "'$encrypted_file' is encrypted."
       else
-        echo "'$encrypted_file' is updated"
+        echo "'$encrypted_file' is updated."
       fi
     fi
     rm -f -- "$tmp_file"
@@ -170,12 +170,12 @@ agevault_edit() {
 
 agevault_key_get() {
   if [ $# -eq 0 ]; then
-    echo "missing user" >&2
+    echo "missing user." >&2
     return 1
   fi
 
   if [ -z "$AGE_KEY_SERVER" ]; then
-    echo "AGE_KEY_SERVER is not set" >&2
+    echo "AGE_KEY_SERVER is not set." >&2
     return 1
   fi
 
@@ -185,19 +185,19 @@ agevault_key_get() {
 
 agevault_key_add() {
   if [ $# -eq 0 ]; then
-    echo "missing users" >&2
+    echo "missing users." >&2
     return 1
   fi
 
   for u in "$@"; do
     agevault_key_get "$u" >> "$AGE_RECIPIENTS_FILE"
-    echo "added '$u' to '$AGE_RECIPIENTS_FILE'"
+    echo "added '$u' to '$AGE_RECIPIENTS_FILE'."
   done
 }
 
 agevault_key_readd() {
   if [ $# -eq 0 ]; then
-    echo "missing users" >&2
+    echo "missing users." >&2
     return 1
   fi
 
@@ -291,7 +291,7 @@ agevault() {
 }
 
 command -v age >/dev/null 2>&1 || {
-  echo "'age' command not found" >&2
+  echo "'age' command not found." >&2
   exit 1
 }
 
