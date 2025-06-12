@@ -65,8 +65,9 @@ agevault expects an age recipients file named `.age.txt` in the same directory a
 # cp ~/.age/age.pub .age.txt
 
 # echo "my secret" > secrets
-# agevault encrypt secrets && rm secrets
+# agevault encrypt secrets
 'secrets' is encrypted to 'secrets.age'.
+# rm secrets
 
 # agevault decrypt secrets.age
 'secrets.age' is decrypted to 'secrets'.
