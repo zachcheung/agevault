@@ -43,18 +43,19 @@ compinit
 
 agevault expects an age recipients file named `.age.txt` in the same directory as the secret file.
 
-| Command    | Description                                            | Example                           |
-|------------|--------------------------------------------------------|-----------------------------------|
-| encrypt    | Encrypt one or more files using the recipients file    | agevault encrypt secrets          |
-| decrypt    | Decrypt .age files                                     | agevault decrypt secrets.age      |
-| cat        | Print decrypted content to stdout                      | agevault cat secrets.age          |
-| reencrypt  | Re-encrypt files (e.g., after updating recipients)     | agevault reencrypt secrets.age    |
-| edit       | Decrypt, open in editor, then re-encrypt after editing | agevault edit secrets.age         |
-| run        | Decrypt files, load as env vars, then run a command    | agevault run env.age -- npm start |
-| key-add    | Add a public key from a remote key server              | agevault key-add alice            |
-| key-readd  | Reset and re-add a list of public keys                 | agevault key-readd alice bob      |
-| key-get    | Fetch and print a public key from the key server       | agevault key-get alice            |
-| completion | Print bash or zsh completion code                      | agevault completion zsh           |
+| Command    | Description                                                    | Example                           |
+| ---------- | -------------------------------------------------------------- | --------------------------------- |
+| encrypt    | Encrypt file(s)                                                | agevault encrypt secrets          |
+| decrypt    | Decrypt .age file(s)                                           | agevault decrypt secrets.age      |
+| cat        | Decrypt and print to stdout                                    | agevault cat secrets.age          |
+| reencrypt  | Re-encrypt file(s) with the current recipients file            | agevault reencrypt secrets.age    |
+| rotate     | Re-encrypt file(s) with a new key (and update recipients file) | agevault rotate secrets.age       |
+| edit       | Edit encrypted file(s) securely                                | agevault edit secrets.age         |
+| run        | Decrypt and load file(s) into environment, then run command    | agevault run env.age -- npm start |
+| key-add    | Add public key(s) to recipients file                           | agevault key-add alice            |
+| key-get    | Fetch a public key from remote server                          | agevault key-readd alice bob      |
+| key-readd  | Reset and add public key(s)                                    | agevault key-get alice            |
+| completion | Generate shell completion (bash/zsh)                           | agevault completion zsh           |
 
 In most cases, you can simply use `agevault edit` — it handles encryption, decryption, and editing of secrets in one step.
 

@@ -8,8 +8,8 @@ fi
 
 # Setup test environment
 TEST_DIR="$(mktemp -d)"
-ROTATED_DIR="$TEST_DIR/rotated_keys"
 _AGE_SECRET_KEY_FILE="$TEST_DIR/age.key"
+ROTATED_AGE_SECRET_KEY_FILE="$TEST_DIR/new.key"
 AGE_RECIPIENTS_FILE="$TEST_DIR/recipients.txt"
 AGEVAULT_SCRIPT="$(realpath ./agevault.sh)"
 
@@ -71,12 +71,11 @@ echo "----> Test: reencrypt"
 $AGEVAULT_SCRIPT reencrypt "$ENCRYPTED_FILE"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 
-# 6. Test reencrypt with rotate
-echo "----> Test: reencrypt with rotate"
-$AGEVAULT_SCRIPT reencrypt --rotate="$ROTATED_DIR" "$ENCRYPTED_FILE"
-export AGE_SECRET_KEY_FILE="$ROTATED_DIR/age.key"
+# 6. Test rotate
+echo "----> Test: rotate with --new-key"
+$AGEVAULT_SCRIPT rotate --new-key "$ROTATED_AGE_SECRET_KEY_FILE" "$ENCRYPTED_FILE"
+export AGE_SECRET_KEY_FILE="$ROTATED_AGE_SECRET_KEY_FILE"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
-export AGE_RECIPIENTS_FILE="$ROTATED_DIR/age.pub"
 
 # 7. Test edit (non-interactive: simulate editor)
 echo "----> Test: edit"

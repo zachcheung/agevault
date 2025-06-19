@@ -105,61 +105,61 @@ agevault_cat() {
 }
 
 agevault_reencrypt() {
-  rotate=false
-  keydir=""
-  files=""
-
-  # check for --rotate
-  for arg in "$@"; do
-    case "$arg" in
-      --rotate)
-        rotate=true
-        keydir="." ;;
-      --rotate=*)
-        rotate=true
-        keydir=${arg#--rotate=} ;;
-      --*)
-        echo "unknown option: $arg" >&2
-        return 1 ;;
-      *)
-        files="$files $arg" ;;
-    esac
-  done
-
-  if [ -z "$files" ]; then
+  if [ $# -eq 0 ]; then
     echo "missing files." >&2
     return 1
   fi
 
   make_tmp_dir
 
-
-  # if rotating, generate a new key pair
-  if [ "$rotate" = true ]; then
-    mkdir -p "$keydir"
-    new_priv="$keydir/age.key"
-    new_pub="$keydir/age.pub"
-    if [ -e "$new_priv" ] || [ -e "$new_pub" ]; then
-      echo "[WARN] '$new_priv' or '$new_pub' already exists." >&2
-    else
-      age-keygen -o "$new_priv"
-      age-keygen -y -o "$new_pub" "$new_priv"
-      echo "[INFO] new key pair generated: '$keydir/age.key', '$keydir/age.pub'"
-    fi
-  fi
-
-  for f in $files; do
-    if [ "$rotate" = true ]; then
-      rf="$new_pub"
-    else
-      rf=$(get_age_recipients_file "$f")
-    fi
-
+  for f in "$@"; do
+    rf=$(get_age_recipients_file "$f")
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
     age -R "$rf" -o "$f" "$tmp_file"
     echo "'$f' is reencrypted."
     rm -f -- "$tmp_file"
+  done
+}
+
+agevault_rotate() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: agevault rotate [--new-key KEY_FILE] FILE [FILE...]" >&2
+    return 1
+  fi
+
+  new_key="./age.key"
+  # parse optional --new-key
+  if [ "$1" = "--new-key" ]; then
+    shift
+    if [ $# -eq 0 ]; then
+      echo "missing key path after --new-key." >&2
+      return 1
+    fi
+    new_key="$1"
+    shift
+  fi
+
+  if [ $# -eq 0 ]; then
+    echo "missing files." >&2
+    return 1
+  fi
+
+  if [ ! -f "$new_key" ]; then
+    echo "[INFO] generating new key '$new_key'"
+    age-keygen -o "$new_key"
+  fi
+  new_pub="$(age-keygen -y "$new_key")"
+  if [ -n "${AGE_SECRET_KEY:-}" ]; then
+    old_pub="$(printf '%s' "$AGE_SECRET_KEY" | age-keygen -y -)"
+  else
+    old_pub="$(age-keygen -y "$AGE_SECRET_KEY_FILE")"
+  fi
+
+  for f in "$@"; do
+    rf=$(get_age_recipients_file "$f")
+    sed -i "s/$old_pub/$new_pub/" "$rf"
+    agevault_reencrypt "$f"
   done
 }
 
@@ -307,21 +307,30 @@ agevault_key_readd() {
 
 agevault_help() {
   cat <<EOF
-Usage: agevault <command> [args...]
+Usage: agevault <command> [options] [files...]
 
 Commands:
   encrypt       Encrypt file(s)
   decrypt       Decrypt .age file(s)
-  cat           Print decrypted content
-  edit          Edit encrypted file(s)
-  run           Decrypt files, load as env vars, then run a command
-                Usage: agevault run FILE [FILE ...] -- command [args...]
-  reencrypt     Re-encrypt file(s) with updated recipients
-  key-get       Fetch public key from key server
-  key-add       Add one or more recipients
-  key-readd     Overwrite recipients
-  completion    Print shell completion script (bash or zsh)
-  help          Show this message
+  cat           Decrypt and print to stdout
+  reencrypt     Re-encrypt file(s) with the current recipients file
+  rotate        Re-encrypt file(s) with a new key (and update recipients file)
+                Options:
+                  --new-key <file>  Path to the new age private key (default: ./age.key)
+  edit          Edit encrypted file(s) securely
+  run           Decrypt and load file(s) into environment, then run command
+  key-add       Add public key(s) to recipients file
+  key-get       Fetch a public key from remote server
+  key-readd     Reset and add public key(s)
+  completion    Generate shell completion (bash/zsh)
+  help          Show this help
+
+Environment:
+  AGE_SECRET_KEY        Inline private key string (takes precedence)
+  AGE_SECRET_KEY_FILE   Path to private key file (default: ~/.age/age.key)
+  AGE_RECIPIENTS_FILE   Recipients file (default: .age.txt)
+  AGE_KEY_SERVER        Required for key-add/key-get/key-readd
+
 EOF
 }
 
@@ -337,7 +346,7 @@ _comp_cmd_agevault() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  local subcommands="encrypt decrypt cat reencrypt edit run key-add key-get key-readd help completion"
+  local subcommands="encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd help completion"
 
   if [[ $COMP_CWORD -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "$subcommands" -- "$cur") )
@@ -345,7 +354,7 @@ _comp_cmd_agevault() {
   fi
 
   case "${COMP_WORDS[1]}" in
-    cat|edit|decrypt|reencrypt|encrypt)
+    encrypt|decrypt|cat|reencrypt|rotate|edit|run)
       COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;
@@ -362,7 +371,7 @@ EOF
 #compdef agevault
 
 _arguments -C \
-  '1:command:(encrypt decrypt cat reencrypt edit run key-add key-get key-readd help completion)' \
+  '1:command:(encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd help completion)' \
   '*::filename:_files'
 EOF
       ;;
@@ -382,6 +391,7 @@ agevault() {
     decrypt) agevault_decrypt "$@" ;;
     cat) agevault_cat "$@" ;;
     reencrypt) agevault_reencrypt "$@" ;;
+    rotate) agevault_rotate "$@" ;;
     edit) agevault_edit "$@" ;;
     run) agevault_run "$@" ;;
     key-add) agevault_key_add "$@" ;;
