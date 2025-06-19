@@ -15,7 +15,7 @@ AGEVAULT_SCRIPT="$(realpath ./agevault.sh)"
 
 export AGE_RECIPIENTS_FILE
 
-#trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
+trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
 
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
