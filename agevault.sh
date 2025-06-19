@@ -2,7 +2,7 @@
 
 set -eu
 
-# Load config
+# load config
 AGE_SECRET_KEY_FILE="${AGE_SECRET_KEY_FILE:-$HOME/.age/age.key}"
 AGE_RECIPIENTS_FILE="${AGE_RECIPIENTS_FILE:-.age.txt}"
 AGE_KEY_SERVER="${AGE_KEY_SERVER:-}"
@@ -109,6 +109,14 @@ agevault_cat() {
 }
 
 agevault_reencrypt() {
+  rotate=false
+
+  # check for --rotate
+  if [ "$1" = "--rotate" ]; then
+    rotate=true
+    shift
+  fi
+
   if [ $# -eq 0 ]; then
     echo "missing files." >&2
     return 1
@@ -116,8 +124,25 @@ agevault_reencrypt() {
 
   make_tmp_dir
 
+
+  # if rotating, generate a new key pair
+  if [ "$rotate" = true ]; then
+    if [ -e "./age.key" ] || [ -e "./age.pub" ]; then
+      echo "[WARN] age.key or age.pub already exists in current directory." >&2
+    else
+      age-keygen -o ./age.key
+      age-keygen -y -o ./age.pub ./age.key
+      echo "[INFO] new key pair generated: ./age.key, ./age.pub"
+    fi
+  fi
+
   for f in "$@"; do
-    rf=$(get_age_recipients_file "$f")
+    if [ "$rotate" = true ]; then
+      rf="./age.pub"
+    else
+      rf=$(get_age_recipients_file "$f")
+    fi
+
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
     age -R "$rf" -o "$f" "$tmp_file"
