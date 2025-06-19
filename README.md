@@ -120,6 +120,7 @@ You can configure `agevault` with the following environment variables.
 
 > [!NOTE]
 > `AGE_KEY_SERVER` must be set if you intend to use `key-add`, `key-get`, or `key-readd`.
+>
 > For best security practices, prefer using `AGE_SECRET_KEY_FILE` over `AGE_SECRET_KEY`.
 
 ### 🌐 Key Management
