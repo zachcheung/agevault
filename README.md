@@ -111,11 +111,16 @@ You can configure `agevault` with the following environment variables.
 
 **Note:** These must be **exported** in your shell session or shell profile (`~/.bashrc`, `~/.zshrc`, etc.) for `agevault` to read them:
 
-| Variable            | Description                     | Default         |
-|---------------------|---------------------------------|-----------------|
-| AGE_SECRET_KEY_FILE | Path to your age private key    | ~/.age/age.key  |
-| AGE_RECIPIENTS_FILE | Path to the recipients list     | .age.txt in CWD |
-| AGE_KEY_SERVER      | Base URL for remote public keys | (must be set)   |
+| Variable            | Description                                  | Default         |
+| ------------------- | -------------------------------------------- | --------------- |
+| AGE_SECRET_KEY      | Private key contents (takes priority if set) | (unset)         |
+| AGE_SECRET_KEY_FILE | Path to your age private key                 | ~/.age/age.key  |
+| AGE_RECIPIENTS_FILE | Path to the recipients list                  | .age.txt in CWD |
+| AGE_KEY_SERVER      | Base URL for remote public keys              | (must be set)   |
+
+> [!NOTE]
+> `AGE_KEY_SERVER` must be set if you intend to use `key-add`, `key-get`, or `key-readd`.
+> For best security practices, prefer using `AGE_SECRET_KEY_FILE` over `AGE_SECRET_KEY`.
 
 ### 🌐 Key Management
 

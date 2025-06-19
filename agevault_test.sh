@@ -8,22 +8,23 @@ fi
 
 # Setup test environment
 TEST_DIR="$(mktemp -d)"
-AGE_SECRET_KEY_FILE="$TEST_DIR/age.key"
+_AGE_SECRET_KEY_FILE="$TEST_DIR/age.key"
 AGE_RECIPIENTS_FILE="$TEST_DIR/recipients.txt"
 AGEVAULT_SCRIPT="$(realpath ./agevault.sh)"
 
-export AGE_SECRET_KEY_FILE AGE_RECIPIENTS_FILE
+export AGE_RECIPIENTS_FILE
 
-trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
+#trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
 
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 # Generate key pair
-age-keygen -o "$AGE_SECRET_KEY_FILE" 2> /dev/null
-age-keygen -y -o "$AGE_RECIPIENTS_FILE" "$AGE_SECRET_KEY_FILE"
+age-keygen -o "$_AGE_SECRET_KEY_FILE" 2> /dev/null
+age-keygen -y -o "$AGE_RECIPIENTS_FILE" "$_AGE_SECRET_KEY_FILE"
+_AGE_SECRET_KEY=$(grep -v "^#" "$_AGE_SECRET_KEY_FILE")
 
-# 1. Test encryption and decryption
-echo "----> Test: encryption and decryption"
+# 1. Test encryption
+echo "----> Test: encryption"
 TEST_FILE="$TEST_DIR/secret.txt"
 ENCRYPTED_FILE="$TEST_FILE.age"
 DECRYPTED_FILE="$TEST_DIR/decrypted.txt"
@@ -32,28 +33,51 @@ echo "hello world" > "$TEST_FILE"
 $AGEVAULT_SCRIPT encrypt "$TEST_FILE"
 [ -f "$ENCRYPTED_FILE" ] || fail "Encryption failed"
 
-cp "$TEST_FILE" "$TEST_FILE.orig"
+# 2. Test decryption with AGE_SECRET_KEY_FILE
+echo "----> Test: decryption with AGE_SECRET_KEY_FILE"
+unset AGE_SECRET_KEY
+export AGE_SECRET_KEY_FILE="$_AGE_SECRET_KEY_FILE"
+mv "$TEST_FILE" "$TEST_FILE.orig"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption did not match original"
+rm "$TEST_FILE"
 
-# 2. Test cat
+# 3. Test decryption with AGE_SECRET_KEY
+echo "----> Test: decryption with AGE_SECRET_KEY"
+export AGE_SECRET_KEY="$_AGE_SECRET_KEY"
+unset AGE_SECRET_KEY_FILE
+$AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption did not match original"
+rm "$TEST_FILE"
+
+# 3. Test decryption with AGE_SECRET_KEY and AGE_SECRET_KEY_FILE
+echo "----> Test: decryption with AGE_SECRET_KEY and AGE_SECRET_KEY_FILE"
+export AGE_SECRET_KEY="$_AGE_SECRET_KEY"
+export AGE_SECRET_KEY_FILE="nonexistence"
+$AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption did not match original"
+rm "$TEST_FILE"
+unset AGE_SECRET_KEY
+export AGE_SECRET_KEY_FILE="$_AGE_SECRET_KEY_FILE"
+
+# 4. Test cat
 echo "----> Test: cat"
 DECRYPTED_CONTENT=$($AGEVAULT_SCRIPT cat "$ENCRYPTED_FILE")
 [ "$DECRYPTED_CONTENT" = "hello world" ] || fail "cat output incorrect"
 
-# 3. Test reencrypt (should still be valid)
+# 5. Test reencrypt (should still be valid)
 echo "----> Test: reencrypt"
 $AGEVAULT_SCRIPT reencrypt "$ENCRYPTED_FILE"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 
-# 4. Test edit (non-interactive: simulate editor)
+# 6. Test edit (non-interactive: simulate editor)
 echo "----> Test: edit"
 export EDITOR="sed -i s/world/universe/"
 $AGEVAULT_SCRIPT edit "$ENCRYPTED_FILE"
 CHANGED=$($AGEVAULT_SCRIPT cat "$ENCRYPTED_FILE")
 [ "$CHANGED" = "hello universe" ] || fail "Edit did not apply"
 
-# 5. Test run: load env from .age and run command
+# 7. Test run: load env from .age and run command
 echo "----> Test: run"
 echo "TEST_VAR=42" > "$TEST_DIR/envfile"
 $AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
@@ -61,7 +85,7 @@ $AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
 RESULT=$($AGEVAULT_SCRIPT run "$TEST_DIR/envfile.age" -- sh -c 'echo $TEST_VAR')
 [ "$RESULT" = "42" ] || fail "agevault run did not set TEST_VAR"
 
-# 6. Test key-add and key-readd
+# 8. Test key-add and key-readd
 echo "----> Test: key-add"
 mkdir -p "$TEST_DIR/keysrv"
 echo "$(cat "$AGE_RECIPIENTS_FILE")" > "$TEST_DIR/keysrv/testuser.pub"

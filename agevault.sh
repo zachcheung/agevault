@@ -61,7 +61,17 @@ _agevault_decrypt_to_stdout() {
     return 1
   fi
 
-  age -d -i "$AGE_SECRET_KEY_FILE" "$1"
+  file="$1"
+
+  if [ -n "${AGE_SECRET_KEY:-}" ]; then
+    make_tmp_dir
+    tmp_key=$(mktemp -p "$TMP_DIR")
+    printf '%s' "$AGE_SECRET_KEY" > "$tmp_key"
+    age -d -i "$tmp_key" "$file"
+    rm -f -- "$tmp_key"
+  else
+    age -d -i "$AGE_SECRET_KEY_FILE" "$file"
+  fi
 }
 
 agevault_decrypt() {
