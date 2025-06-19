@@ -53,7 +53,15 @@ $AGEVAULT_SCRIPT edit "$ENCRYPTED_FILE"
 CHANGED=$($AGEVAULT_SCRIPT cat "$ENCRYPTED_FILE")
 [ "$CHANGED" = "hello universe" ] || fail "Edit did not apply"
 
-# 5. Test key-add and key-readd
+# 5. Test run: load env from .age and run command
+echo "----> Test: run"
+echo "TEST_VAR=42" > "$TEST_DIR/envfile"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
+
+RESULT=$($AGEVAULT_SCRIPT run "$TEST_DIR/envfile.age" -- sh -c 'echo $TEST_VAR')
+[ "$RESULT" = "42" ] || fail "agevault run did not set TEST_VAR"
+
+# 6. Test key-add and key-readd
 echo "----> Test: key-add"
 mkdir -p "$TEST_DIR/keysrv"
 echo "$(cat "$AGE_RECIPIENTS_FILE")" > "$TEST_DIR/keysrv/testuser.pub"

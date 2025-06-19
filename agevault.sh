@@ -181,6 +181,46 @@ agevault_edit() {
   done
 }
 
+agevault_run() {
+  # collect files until we hit "--"
+  env_files=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --)
+        shift
+        break
+        ;;
+      *)
+        env_files="$env_files $1"
+        shift
+        ;;
+    esac
+  done
+
+  if [ -z "$env_files" ]; then
+    echo "no env files provided" >&2
+    return 1
+  fi
+
+  if [ "$#" -eq 0 ]; then
+    echo "no command specified after '--'" >&2
+    return 1
+  fi
+
+  make_tmp_dir
+
+  set -a
+  for f in $env_files; do
+    tmp_env="$TMP_DIR/${f##*/}"
+    agevault_cat "$f" >> "$tmp_env"
+    . "$tmp_env"
+    rm -f -- "$tmp_env"
+  done
+  set +a
+
+  exec "$@"
+}
+
 agevault_key_get() {
   if [ $# -eq 0 ]; then
     echo "missing user." >&2
@@ -227,6 +267,8 @@ Commands:
   decrypt       Decrypt .age file(s)
   cat           Print decrypted content
   edit          Edit encrypted file(s)
+  run           Decrypt files, load as env vars, then run a command
+                Usage: agevault run FILE [FILE ...] -- command [args...]
   reencrypt     Re-encrypt file(s) with updated recipients
   key-get       Fetch public key from key server
   key-add       Add one or more recipients
@@ -248,7 +290,7 @@ _comp_cmd_agevault() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  local subcommands="encrypt decrypt cat reencrypt edit key-add key-get key-readd help completion"
+  local subcommands="encrypt decrypt cat reencrypt edit run key-add key-get key-readd help completion"
 
   if [[ $COMP_CWORD -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "$subcommands" -- "$cur") )
@@ -273,7 +315,7 @@ EOF
 #compdef agevault
 
 _arguments -C \
-  '1:command:(encrypt decrypt cat reencrypt edit key-add key-get key-readd help completion)' \
+  '1:command:(encrypt decrypt cat reencrypt edit run key-add key-get key-readd help completion)' \
   '*::filename:_files'
 EOF
       ;;
@@ -294,6 +336,7 @@ agevault() {
     cat) agevault_cat "$@" ;;
     reencrypt) agevault_reencrypt "$@" ;;
     edit) agevault_edit "$@" ;;
+    run) agevault_run "$@" ;;
     key-add) agevault_key_add "$@" ;;
     key-get) agevault_key_get "$@" ;;
     key-readd) agevault_key_readd "$@" ;;
