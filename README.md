@@ -114,7 +114,7 @@ You can configure `agevault` with the following environment variables.
 
 | Variable            | Description                                  | Default                                          |
 | ------------------- | -------------------------------------------- | ------------------------------------------------ |
-| AGE_SECRET_KEY      | Private key contents (takes priority if set) | (unset)                                          |
+| AGE_SECRET_KEY      | Inline private key string (takes precedence) | (unset)                                          |
 | AGE_SECRET_KEY_FILE | Path to your age private key                 | ~/.age/age.key                                   |
 | AGE_RECIPIENTS_FILE | Path to the recipients list                  | .age.txt in same directory as the encrypted file |
 | AGE_KEY_SERVER      | Base URL for remote public keys              | (must be set)                                    |
