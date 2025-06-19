@@ -110,14 +110,27 @@ agevault_cat() {
 
 agevault_reencrypt() {
   rotate=false
+  keydir=""
+  files=""
 
   # check for --rotate
-  if [ "$1" = "--rotate" ]; then
-    rotate=true
-    shift
-  fi
+  for arg in "$@"; do
+    case "$arg" in
+      --rotate)
+        rotate=true
+        keydir="." ;;
+      --rotate=*)
+        rotate=true
+        keydir=${arg#--rotate=} ;;
+      --*)
+        echo "unknown option: $arg" >&2
+        return 1 ;;
+      *)
+        files="$files $arg" ;;
+    esac
+  done
 
-  if [ $# -eq 0 ]; then
+  if [ -z "$files" ]; then
     echo "missing files." >&2
     return 1
   fi
@@ -127,18 +140,21 @@ agevault_reencrypt() {
 
   # if rotating, generate a new key pair
   if [ "$rotate" = true ]; then
-    if [ -e "./age.key" ] || [ -e "./age.pub" ]; then
-      echo "[WARN] age.key or age.pub already exists in current directory." >&2
+    mkdir -p "$keydir"
+    new_priv="$keydir/age.key"
+    new_pub="$keydir/age.pub"
+    if [ -e "$new_priv" ] || [ -e "$new_pub" ]; then
+      echo "[WARN] '$new_priv' or '$new_pub' already exists." >&2
     else
-      age-keygen -o ./age.key
-      age-keygen -y -o ./age.pub ./age.key
-      echo "[INFO] new key pair generated: ./age.key, ./age.pub"
+      age-keygen -o "$new_priv"
+      age-keygen -y -o "$new_pub" "$new_priv"
+      echo "[INFO] new key pair generated: '$keydir/age.key', '$keydir/age.pub'"
     fi
   fi
 
-  for f in "$@"; do
+  for f in $files; do
     if [ "$rotate" = true ]; then
-      rf="./age.pub"
+      rf="$new_pub"
     else
       rf=$(get_age_recipients_file "$f")
     fi

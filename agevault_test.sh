@@ -8,6 +8,7 @@ fi
 
 # Setup test environment
 TEST_DIR="$(mktemp -d)"
+ROTATED_DIR="$TEST_DIR/rotated_keys"
 _AGE_SECRET_KEY_FILE="$TEST_DIR/age.key"
 AGE_RECIPIENTS_FILE="$TEST_DIR/recipients.txt"
 AGEVAULT_SCRIPT="$(realpath ./agevault.sh)"
@@ -70,14 +71,21 @@ echo "----> Test: reencrypt"
 $AGEVAULT_SCRIPT reencrypt "$ENCRYPTED_FILE"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 
-# 6. Test edit (non-interactive: simulate editor)
+# 6. Test reencrypt with rotate
+echo "----> Test: reencrypt with rotate"
+$AGEVAULT_SCRIPT reencrypt --rotate="$ROTATED_DIR" "$ENCRYPTED_FILE"
+export AGE_SECRET_KEY_FILE="$ROTATED_DIR/age.key"
+$AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+export AGE_RECIPIENTS_FILE="$ROTATED_DIR/age.pub"
+
+# 7. Test edit (non-interactive: simulate editor)
 echo "----> Test: edit"
 export EDITOR="sed -i s/world/universe/"
 $AGEVAULT_SCRIPT edit "$ENCRYPTED_FILE"
 CHANGED=$($AGEVAULT_SCRIPT cat "$ENCRYPTED_FILE")
 [ "$CHANGED" = "hello universe" ] || fail "Edit did not apply"
 
-# 7. Test run: load env from .age and run command
+# 8. Test run: load env from .age and run command
 echo "----> Test: run"
 echo "TEST_VAR=42" > "$TEST_DIR/envfile"
 $AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
@@ -85,7 +93,7 @@ $AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
 RESULT=$($AGEVAULT_SCRIPT run "$TEST_DIR/envfile.age" -- sh -c 'echo $TEST_VAR')
 [ "$RESULT" = "42" ] || fail "agevault run did not set TEST_VAR"
 
-# 8. Test key-add and key-readd
+# 9. Test key-add and key-readd
 echo "----> Test: key-add"
 mkdir -p "$TEST_DIR/keysrv"
 echo "$(cat "$AGE_RECIPIENTS_FILE")" > "$TEST_DIR/keysrv/testuser.pub"
