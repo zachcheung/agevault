@@ -55,11 +55,22 @@ agevault_encrypt() {
   done
 }
 
+_agevault_decrypt_to_stdout() {
+  if [ $# -eq 0 ]; then
+    echo "missing file." >&2
+    return 1
+  fi
+
+  age -d -i "$AGE_SECRET_KEY_FILE" "$1"
+}
+
 agevault_decrypt() {
   if [ $# -eq 0 ]; then
     echo "missing files." >&2
     return 1
   fi
+
+  make_tmp_dir
 
   for f in "$@"; do
     case "$f" in
@@ -69,7 +80,9 @@ agevault_decrypt() {
     if [ -e "$d" ]; then
       echo "[WARN] '$d' already exists." >&2
     fi
-    age -d -i "$AGE_SECRET_KEY_FILE" -o "$d" "$f"
+    tmp_file="$(mktemp -p "$TMP_DIR")"
+    _agevault_decrypt_to_stdout "$f" > "$tmp_file"
+    mv "$tmp_file" "$d"
     echo "'$f' is decrypted to '$d'."
   done
 }
@@ -81,7 +94,7 @@ agevault_cat() {
   fi
 
   for f in "$@"; do
-    age -d -i "$AGE_SECRET_KEY_FILE" "$f"
+    _agevault_decrypt_to_stdout "$f"
   done
 }
 
