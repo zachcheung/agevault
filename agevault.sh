@@ -456,9 +456,70 @@ EOF
       cat <<'EOF'
 #compdef agevault
 
+local -a subcommands_list
+subcommands_list=(
+  'cat:Print decrypted content'
+  'completion:Generate completion scripts'
+  'decrypt:Decrypt files'
+  'edit:Edit encrypted file'
+  'encrypt:Encrypt files'
+  'git-setup:Configure Git integration'
+  'help:Show help'
+  'key-add:Add remote key'
+  'key-get:Get remote key'
+  'key-readd:Reset and re-add remote keys'
+  'reencrypt:Re-encrypt files'
+  'rotate:Rotate key and re-encrypt'
+  'run:Run command with decrypted env'
+)
+
+# Dispatch per subcommand
 _arguments -C \
-  '1:command:(encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd completion git-setup help)' \
-  '*::filename:_files'
+  '1: :->command_selector' \
+  '2: :->command_args' \
+  '*:: :->general_args'
+
+case $state in
+  command_selector)
+    _describe 'command' subcommands_list
+    ;;
+
+  command_args)
+    case $words[2] in # $words[2] is the subcommand
+      encrypt|decrypt|cat|reencrypt|edit|run)
+        _files # For these, just complete files
+        ;;
+
+      rotate)
+        # Options are listed first, then positional arguments
+        _arguments \
+          '--new-key[Path to new age key file]:file:_files' \
+          '*:files:_files'
+        ;;
+
+      key-add|key-get|key-readd)
+        _message 'Provide username(s)'
+        ;;
+
+      git-setup)
+        _values 'scope' --local --global --system
+        ;;
+
+      completion)
+        _values 'shell' bash zsh
+        ;;
+
+      help)
+        _message 'No further arguments'
+        ;;
+    esac
+    ;;
+
+  general_args)
+    # This state will be hit if there are arguments after the command_args
+    # and no specific rule for them was matched.
+    ;;
+esac
 EOF
       ;;
     *)
