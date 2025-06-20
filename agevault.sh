@@ -305,6 +305,67 @@ agevault_key_readd() {
   agevault_key_add "$@"
 }
 
+agevault_git_setup() {
+  textconv_cmd="agevault cat"
+  scope="${1:---local}"
+  case "$scope" in
+    --global|--system|--local) ;;
+    *) echo "unknown option: $scope" >&2; return 1 ;;
+  esac
+
+  set +e
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "not inside a Git repository." >&2
+    return 1
+  fi
+
+  repo_root=$(git rev-parse --show-toplevel)
+  attr_file="$repo_root/.gitattributes"
+
+  # check and set the textconv command
+  current=$(git config --get diff.agevault.textconv || echo "")
+  if [ "$current" != "$textconv_cmd" ]; then
+    git config $scope diff.agevault.textconv "$textconv_cmd"
+    if [ $? -eq 0 ]; then
+      echo "configured diff.agevault.textconv in ${scope#--}."
+    else
+      echo "failed to configure diff.agevault.textconv in ${scope#--}." >&2
+      return 1
+    fi
+  else
+    echo "already set diff.agevault.textconv."
+  fi
+
+  # handle .gitattributes
+  line='**/*.age diff=agevault'
+
+  if [ -f "$attr_file" ]; then
+    if grep -Eq '^\*\*/\*\.age diff=' "$attr_file"; then
+      make_tmp_dir
+      tmp_attr="$(mktemp -p "$TMP_DIR")"
+      cp "$attr_file" "$tmp_attr"
+
+      # apply the substitution on the temporary file
+      sed -i -E "s|^\*\*/\*\.age diff=.*|$line|" "$tmp_attr"
+      # if the content changed, update the original file and notify
+      if ! cmp -s "$attr_file" "${tmp_attr}"; then
+        cp "${tmp_attr}" "$attr_file"
+        echo "updated .gitattributes at the Git repository root."
+      else
+        echo "already set .gitattributes at the Git repository root."
+      fi
+    else
+      echo "$line" >> "$attr_file"
+      echo "configured .gitattributes at the Git repository root."
+    fi
+  else
+    echo "$line" > "$attr_file"
+    echo "created .gitattributes at the Git repository root."
+  fi
+
+  set -e
+}
+
 agevault_help() {
   cat <<EOF
 Usage: agevault <command> [options] [files...]
@@ -323,6 +384,10 @@ Commands:
   key-get       Fetch a public key from remote server
   key-readd     Reset and add public key(s)
   completion    Generate shell completion (bash/zsh)
+  git-setup     Set up Git integration for agevault diff viewing
+                - Configures 'diff.agevault.textconv' to use 'agevault cat'
+                - Adds '**/*.age diff=agevault' to the .gitattributes at the Git repo root
+                - Supports --local (default), --global, or --system for 'diff.agevault.textconv'
   help          Show this help
 
 Environment:
@@ -346,7 +411,7 @@ _comp_cmd_agevault() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  local subcommands="encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd help completion"
+  local subcommands="encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd completion git-setup help"
 
   if [[ $COMP_CWORD -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "$subcommands" -- "$cur") )
@@ -361,6 +426,10 @@ _comp_cmd_agevault() {
     key-add|key-get|key-readd)
       return 0
       ;;
+    git-setup)
+      COMPREPLY=( $(compgen -W "--local --global --system" -- "$cur") )
+      return 0
+      ;;
   esac
 }
 complete -F _comp_cmd_agevault -o filenames agevault
@@ -371,7 +440,7 @@ EOF
 #compdef agevault
 
 _arguments -C \
-  '1:command:(encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd help completion)' \
+  '1:command:(encrypt decrypt cat reencrypt rotate edit run key-add key-get key-readd completion git-setup help)' \
   '*::filename:_files'
 EOF
       ;;
@@ -398,6 +467,7 @@ agevault() {
     key-get) agevault_key_get "$@" ;;
     key-readd) agevault_key_readd "$@" ;;
     completion) agevault_completion "$@" ;;
+    git-setup) agevault_git_setup "$@" ;;
     help) agevault_help ;;
     *) echo "Unknown command: $cmd" >&2; exit 1 ;;
   esac

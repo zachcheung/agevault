@@ -56,6 +56,7 @@ agevault expects an age recipients file named `.age.txt` in the same directory a
 | key-get    | Fetch a public key from remote server                          | agevault key-readd alice bob      |
 | key-readd  | Reset and add public key(s)                                    | agevault key-get alice            |
 | completion | Generate shell completion (bash/zsh)                           | agevault completion zsh           |
+| git-setup  | Set up Git integration for agevault diff viewing               | agevault git-setup                |
 
 In most cases, you can simply use `agevault edit` — it handles encryption, decryption, and editing of secrets in one step.
 
