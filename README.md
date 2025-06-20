@@ -12,13 +12,13 @@ sudo curl -fsSL https://raw.githubusercontent.com/zachcheung/agevault/main/ageva
 
 - **Bash**
 
-To install completion globally (recommended):
+To install completion globally:
 
 ```sh
 agevault completion bash | sudo tee /usr/share/bash-completion/completions/agevault > /dev/null
 ```
 
-Or, to configure it in your `~/.bashrc` for per-user usage:
+Or, to configure it in your `~/.bashrc` for per-user usage (recommended):
 
 ```sh
 # ~/.bashrc
