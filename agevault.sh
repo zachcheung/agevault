@@ -419,8 +419,25 @@ _comp_cmd_agevault() {
   fi
 
   case "${COMP_WORDS[1]}" in
-    encrypt|decrypt|cat|reencrypt|rotate|edit|run)
+    encrypt|decrypt|cat|reencrypt|edit|run)
       COMPREPLY=( $(compgen -f -- "$cur") )
+      return 0
+      ;;
+    rotate)
+      local has_new_key=false
+      for word in "${COMP_WORDS[@]:1}"; do
+        [[ "$word" == "--new-key" ]] && has_new_key=true
+      done
+
+      if [[ "$prev" == "--new-key" ]]; then
+        COMPREPLY=( $(compgen -f -- "$cur") )
+      else
+        if $has_new_key; then
+          COMPREPLY=( $(compgen -f -- "$cur") )
+        else
+          COMPREPLY=( $(compgen -W "--new-key" -f -- "$cur") )
+        fi
+      fi
       return 0
       ;;
     key-add|key-get|key-readd)
