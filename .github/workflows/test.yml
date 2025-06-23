@@ -1,0 +1,40 @@
+name: agevault tests
+
+on:
+  push:
+    paths:
+      - .github/workflows/test.yml
+      - agevault.sh
+      - agevault_test.sh
+  pull_request:
+    paths:
+      - .github/workflows/test.yml
+      - agevault.sh
+      - agevault_test.sh
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install age
+        run: |
+          if command -v brew >/dev/null 2>&1; then
+            brew install age
+          else
+            sudo apt-get update
+            sudo apt-get install -y age
+          fi
+
+      - name: Link agevault.sh to /usr/local/bin/agevault
+        run: sudo ln -svf "$PWD/agevault.sh" /usr/local/bin/agevault
+
+      - name: Run agevault test suite
+        run: ./agevault_test.sh
