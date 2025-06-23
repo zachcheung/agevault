@@ -330,12 +330,12 @@ agevault_git_setup() {
   attr_file="$repo_root/.gitattributes"
 
   # check and set the textconv command
-  current=$(git config --get diff.agevault.textconv || echo "")
+  current=$(git config $scope --get diff.agevault.textconv || echo "")
   if [ "$current" != "$textconv_cmd" ]; then
     git config $scope diff.agevault.textconv "$textconv_cmd"
     echo "configured diff.agevault.textconv in ${scope#--}."
   else
-    echo "already set diff.agevault.textconv."
+    echo "already set diff.agevault.textconv in ${scope#--}."
   fi
 
   # handle .gitattributes
