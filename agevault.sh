@@ -321,8 +321,7 @@ agevault_git_setup() {
     *) echo "unknown option: $scope" >&2; return 1 ;;
   esac
 
-  set +e
-  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if ! (git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
     echo "not inside a Git repository." >&2
     return 1
   fi
@@ -334,12 +333,7 @@ agevault_git_setup() {
   current=$(git config --get diff.agevault.textconv || echo "")
   if [ "$current" != "$textconv_cmd" ]; then
     git config $scope diff.agevault.textconv "$textconv_cmd"
-    if [ $? -eq 0 ]; then
-      echo "configured diff.agevault.textconv in ${scope#--}."
-    else
-      echo "failed to configure diff.agevault.textconv in ${scope#--}." >&2
-      return 1
-    fi
+    echo "configured diff.agevault.textconv in ${scope#--}."
   else
     echo "already set diff.agevault.textconv."
   fi
@@ -348,7 +342,7 @@ agevault_git_setup() {
   line='**/*.age diff=agevault'
 
   if [ -f "$attr_file" ]; then
-    if grep -Eq '^\*\*/\*\.age diff=' "$attr_file"; then
+    if (grep -Eq '^\*\*/\*\.age diff=' "$attr_file"); then
       make_tmp_dir
       tmp_attr="$(mktemp -p "$TMP_DIR")"
       cp "$attr_file" "$tmp_attr"
@@ -356,7 +350,7 @@ agevault_git_setup() {
       # apply the substitution on the temporary file
       sed_i -E "s|^\*\*/\*\.age diff=.*|$line|" "$tmp_attr"
       # if the content changed, update the original file and notify
-      if ! cmp -s "$attr_file" "${tmp_attr}"; then
+      if ! (cmp -s "$attr_file" "${tmp_attr}"); then
         cp "${tmp_attr}" "$attr_file"
         echo "updated .gitattributes at the Git repository root."
       else
@@ -370,8 +364,6 @@ agevault_git_setup() {
     echo "$line" > "$attr_file"
     echo "created .gitattributes at the Git repository root."
   fi
-
-  set -e
 }
 
 agevault_help() {
