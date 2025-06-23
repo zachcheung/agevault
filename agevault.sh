@@ -15,6 +15,14 @@ make_tmp_dir() {
   fi
 }
 
+set_sed_i() {
+  if (sed --version >/dev/null 2>&1); then
+    sed_i() { sed -i "$@"; }
+  else
+    sed_i() { sed -i '' "$@"; }
+  fi
+}
+
 get_age_recipients_file() {
   if [ $# -eq 0 ]; then
     echo "missing file." >&2
@@ -158,7 +166,7 @@ agevault_rotate() {
 
   for f in "$@"; do
     rf=$(get_age_recipients_file "$f")
-    sed -i "s/$old_pub/$new_pub/" "$rf"
+    sed_i "s/$old_pub/$new_pub/" "$rf"
     agevault_reencrypt "$f"
   done
 }
@@ -346,7 +354,7 @@ agevault_git_setup() {
       cp "$attr_file" "$tmp_attr"
 
       # apply the substitution on the temporary file
-      sed -i -E "s|^\*\*/\*\.age diff=.*|$line|" "$tmp_attr"
+      sed_i -E "s|^\*\*/\*\.age diff=.*|$line|" "$tmp_attr"
       # if the content changed, update the original file and notify
       if ! cmp -s "$attr_file" "${tmp_attr}"; then
         cp "${tmp_attr}" "$attr_file"
@@ -556,4 +564,5 @@ command -v age >/dev/null 2>&1 || {
   exit 1
 }
 
+set_sed_i
 agevault "$@"

@@ -79,7 +79,11 @@ $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 
 # 7. Test edit (non-interactive: simulate editor)
 echo "----> Test: edit"
-export EDITOR="sed -i s/world/universe/"
+if (sed --version >/dev/null 2>&1); then
+  export EDITOR="sed -i s/world/universe/"
+else
+  export EDITOR="sed -i '' s/world/universe/"
+fi
 $AGEVAULT_SCRIPT edit "$ENCRYPTED_FILE"
 CHANGED=$($AGEVAULT_SCRIPT cat "$ENCRYPTED_FILE")
 [ "$CHANGED" = "hello universe" ] || fail "Edit did not apply"
