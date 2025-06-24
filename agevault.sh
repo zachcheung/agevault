@@ -23,6 +23,14 @@ set_sed_i() {
   fi
 }
 
+hash256() {
+  if (command -v sha256sum >/dev/null 2>&1); then
+    sha256sum "$1" | cut -d' ' -f1
+  else
+    shasum -a 256 "$1" | cut -d' ' -f1
+  fi
+}
+
 get_age_recipients_file() {
   if [ $# -eq 0 ]; then
     echo "missing file." >&2
@@ -219,9 +227,9 @@ agevault_edit() {
         ;;
     esac
 
-    orig_hash=$(sha256sum "$tmp_file" | cut -d' ' -f1)
+    orig_hash=$(hash256 "$tmp_file")
     ${EDITOR:-vi} "$tmp_file"
-    new_hash=$(sha256sum "$tmp_file" | cut -d' ' -f1)
+    new_hash=$(hash256 "$tmp_file")
 
     if [ "$orig_hash" != "$new_hash" ] || { [ ! -s "$tmp_file" ] && [ "$encrypted_file_exists" = false ]; }; then
       # file changes or (file is empty and encrypted_file does not exist)
