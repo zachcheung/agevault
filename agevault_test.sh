@@ -24,12 +24,37 @@ age-keygen -o "$_AGE_SECRET_KEY_FILE"
 age-keygen -y -o "$AGE_RECIPIENTS_FILE" "$_AGE_SECRET_KEY_FILE"
 _AGE_SECRET_KEY=$(grep -v "^#" "$_AGE_SECRET_KEY_FILE")
 
-# Test encryption
-echo "----> Test: encryption"
 TEST_FILE="$TEST_DIR/secret.txt"
 ENCRYPTED_FILE="$TEST_FILE.age"
 echo "hello world" > "$TEST_FILE"
+cp "$TEST_FILE" "$TEST_FILE.orig"
 
+# Test encryption with AGE_RECIPIENTS
+echo "----> Test: encryption with AGE_RECIPIENTS"
+# Generate two key pairs and concatenate their public keys into AGE_RECIPIENTS
+AGE_KEY1="$TEST_DIR/key1.txt"
+AGE_KEY2="$TEST_DIR/key2.txt"
+AGE_PUB1="$TEST_DIR/key1.pub"
+AGE_PUB2="$TEST_DIR/key2.pub"
+
+age-keygen -o "$AGE_KEY1"
+age-keygen -o "$AGE_KEY2"
+age-keygen -y -o "$AGE_PUB1" "$AGE_KEY1"
+age-keygen -y -o "$AGE_PUB2" "$AGE_KEY2"
+
+export AGE_RECIPIENTS="$(cat "$AGE_PUB1"), $(cat "$AGE_PUB2") "
+# This should encrypt using recipients from AGE_RECIPIENTS
+$AGEVAULT_SCRIPT encrypt "$TEST_FILE"
+rm "$TEST_FILE"
+# Test decryption
+for k in $AGE_KEY1 $AGE_KEY2; do
+  AGE_SECRET_KEY_FILE=$k $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+  cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption did not match original"
+done
+unset AGE_RECIPIENTS
+
+# Test encryption
+echo "----> Test: encryption"
 $AGEVAULT_SCRIPT encrypt "$TEST_FILE"
 [ -f "$ENCRYPTED_FILE" ] || fail "Encryption failed"
 
@@ -37,7 +62,6 @@ $AGEVAULT_SCRIPT encrypt "$TEST_FILE"
 echo "----> Test: decryption with AGE_SECRET_KEY_FILE"
 unset AGE_SECRET_KEY
 export AGE_SECRET_KEY_FILE="$_AGE_SECRET_KEY_FILE"
-mv "$TEST_FILE" "$TEST_FILE.orig"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption did not match original"
 rm "$TEST_FILE"

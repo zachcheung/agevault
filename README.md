@@ -41,7 +41,7 @@ compinit
 
 ### 🚀 Usage
 
-agevault expects an age recipients file named `.age.txt` in the same directory as the secret file.
+By default, agevault expects an age recipients file named `.age.txt` in the same directory as the secret file. You can override this behavior by setting the `AGE_RECIPIENTS` or `AGE_RECIPIENTS_FILE` environment variable.
 
 | Command    | Description                                                    | Example                           |
 | ---------- | -------------------------------------------------------------- | --------------------------------- |
@@ -113,12 +113,13 @@ You can configure `agevault` with the following environment variables.
 
 **Note:** These must be **exported** in your shell session or shell profile (`~/.bashrc`, `~/.zshrc`, etc.) for `agevault` to read them:
 
-| Variable            | Description                                  | Default                                          |
-| ------------------- | -------------------------------------------- | ------------------------------------------------ |
-| AGE_SECRET_KEY      | Inline private key string (takes precedence) | (unset)                                          |
-| AGE_SECRET_KEY_FILE | Path to your age private key                 | ~/.age/age.key                                   |
-| AGE_RECIPIENTS_FILE | Path to the recipients list                  | .age.txt in same directory as the encrypted file |
-| AGE_KEY_SERVER      | Base URL for remote public keys              | (must be set)                                    |
+| Variable              | Description                                           | Default                                            |
+| --------------------- | ----------------------------------------------------- | -------------------------------------------------- |
+| `AGE_SECRET_KEY`      | Inline private key string (takes precedence)          | (unset)                                            |
+| `AGE_SECRET_KEY_FILE` | Path to your age private key                          | `~/.age/age.key`                                   |
+| `AGE_RECIPIENTS`      | Comma-separated list of recipients (takes precedence) | (unset)                                            |
+| `AGE_RECIPIENTS_FILE` | Path to the recipients list                           | `.age.txt` in same directory as the encrypted file |
+| `AGE_KEY_SERVER`      | Base URL for remote public keys                       | (must be set if using key commands)                |
 
 > [!NOTE]
 > `AGE_KEY_SERVER` **must be set** if you intend to use `key-add`, `key-get`, or `key-readd`.

@@ -6,6 +6,7 @@ set -eu
 AGE_SECRET_KEY_FILE="${AGE_SECRET_KEY_FILE:-$HOME/.age/age.key}"
 AGE_RECIPIENTS_FILE="${AGE_RECIPIENTS_FILE:-.age.txt}"
 AGE_KEY_SERVER="${AGE_KEY_SERVER:-}"
+_AGE_RECIPIENTS_FILE=""
 TMP_DIR=""
 
 make_tmp_dir() {
@@ -32,6 +33,19 @@ hash256() {
 }
 
 get_age_recipients_file() {
+  if [ -n "${AGE_RECIPIENTS:-}" ]; then
+    make_tmp_dir
+    tmp_file="$(mktemp -p "$TMP_DIR")"
+    IFS=,
+    for r in $AGE_RECIPIENTS; do
+      # trim leading/trailing whitespace
+      printf '%s\n' "$r" | awk '{$1=$1; print}' >> "$tmp_file"
+    done
+    unset IFS
+    _AGE_RECIPIENTS_FILE="$tmp_file"
+    return 0
+  fi
+
   if [ $# -eq 0 ]; then
     echo "missing file." >&2
     return 1
@@ -45,14 +59,14 @@ get_age_recipients_file() {
 
   if [ ! -r "$rf" ]; then
     if [ ! -e "$rf" ]; then
-      echo "'$rf' not found." >&2
+      echo "AGE_RECIPIENTS is not set, and '$rf' not found." >&2
     else
-      echo "'$rf' is not readable." >&2
+      echo "AGE_RECIPIENTS is not set, and '$rf' is not readable." >&2
     fi
     return 1
   fi
 
-  printf "$rf"
+  _AGE_RECIPIENTS_FILE="$rf"
 }
 
 agevault_encrypt() {
@@ -62,11 +76,11 @@ agevault_encrypt() {
   fi
 
   for f in "$@"; do
-    rf=$(get_age_recipients_file "$f")
     if [ -e "$f.age" ]; then
       echo "[WARN] '$f.age' already exists." >&2
     fi
-    age -R "$rf" -o "$f.age" "$f"
+    get_age_recipients_file "$f"
+    age -R "$_AGE_RECIPIENTS_FILE" -o "$f.age" "$f"
     echo "'$f' is encrypted to '$f.age'."
   done
 }
@@ -129,10 +143,10 @@ agevault_reencrypt() {
   make_tmp_dir
 
   for f in "$@"; do
-    rf=$(get_age_recipients_file "$f")
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
-    age -R "$rf" -o "$f" "$tmp_file"
+    get_age_recipients_file "$f"
+    age -R "$_AGE_RECIPIENTS_FILE" -o "$f" "$tmp_file"
     echo "'$f' is reencrypted."
     rm -f -- "$tmp_file"
   done
@@ -173,8 +187,8 @@ agevault_rotate() {
   fi
 
   for f in "$@"; do
-    rf=$(get_age_recipients_file "$f")
-    sed_i "s/$old_pub/$new_pub/" "$rf"
+    get_age_recipients_file "$f"
+    sed_i "s/$old_pub/$new_pub/" "$_AGE_RECIPIENTS_FILE"
     agevault_reencrypt "$f"
   done
 }
@@ -188,7 +202,6 @@ agevault_edit() {
   make_tmp_dir
 
   for f in "$@"; do
-    rf=$(get_age_recipients_file "$f")
     base=$(basename "$f" .age)
     tmp_file="$(mktemp -p "$TMP_DIR" "agevault-edit-XXXXXX.$base")"
     encrypted_file_exists=false
@@ -233,7 +246,8 @@ agevault_edit() {
 
     if [ "$orig_hash" != "$new_hash" ] || { [ ! -s "$tmp_file" ] && [ "$encrypted_file_exists" = false ]; }; then
       # file changes or (file is empty and encrypted_file does not exist)
-      age -R "$rf" -o "$encrypted_file" "$tmp_file"
+      get_age_recipients_file "$f"
+      age -R "$_AGE_RECIPIENTS_FILE" -o "$encrypted_file" "$tmp_file"
       if [ "$encrypted_file_exists" = false ]; then
         echo "'$encrypted_file' is encrypted."
       else
