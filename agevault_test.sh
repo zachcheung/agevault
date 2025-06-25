@@ -20,7 +20,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT INT TERM
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 # Generate key pair
-age-keygen -o "$_AGE_SECRET_KEY_FILE" 2> /dev/null
+age-keygen -o "$_AGE_SECRET_KEY_FILE"
 age-keygen -y -o "$AGE_RECIPIENTS_FILE" "$_AGE_SECRET_KEY_FILE"
 _AGE_SECRET_KEY=$(grep -v "^#" "$_AGE_SECRET_KEY_FILE")
 
@@ -28,7 +28,6 @@ _AGE_SECRET_KEY=$(grep -v "^#" "$_AGE_SECRET_KEY_FILE")
 echo "----> Test: encryption"
 TEST_FILE="$TEST_DIR/secret.txt"
 ENCRYPTED_FILE="$TEST_FILE.age"
-DECRYPTED_FILE="$TEST_DIR/decrypted.txt"
 echo "hello world" > "$TEST_FILE"
 
 $AGEVAULT_SCRIPT encrypt "$TEST_FILE"
