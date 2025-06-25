@@ -136,12 +136,26 @@ agevault_cat() {
 
 agevault_reencrypt() {
   if [ $# -eq 0 ]; then
-    echo "missing files." >&2
+    echo "missing files. specify one or more files or use the --all option." >&2
     return 1
   fi
 
-  make_tmp_dir
+  # handle --all option
+  if [ "$1" = "--all" ]; then
+    shift
+    if ! (git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+      echo "not inside a Git repository." >&2
+      return 1
+    fi
+    repo_root=$(git rev-parse --show-toplevel)
+    set -- $(git -C "$repo_root" ls-files '*.age' | sed "s|^|$repo_root/|")
+    if [ $# -eq 0 ]; then
+      echo "no tracked .age files found in Git." >&2
+      return 1
+    fi
+  fi
 
+  make_tmp_dir
   for f in "$@"; do
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
@@ -441,8 +455,21 @@ _comp_cmd_agevault() {
   fi
 
   case "${COMP_WORDS[1]}" in
-    encrypt|decrypt|cat|reencrypt|edit|run)
+    encrypt|decrypt|cat|edit|run)
       COMPREPLY=( $(compgen -f -- "$cur") )
+      return 0
+      ;;
+    reencrypt)
+      local has_all=false
+      for word in "${COMP_WORDS[@]:1}"; do
+        [[ "$word" == "--all" ]] && has_all=true
+      done
+
+      if [[ "$has_all" == "true" ]]; then
+        COMPREPLY=()  # no completion if --all is present
+      else
+        COMPREPLY=( $(compgen -W "--all" -f -- "$cur") )
+      fi
       return 0
       ;;
     rotate)
@@ -508,8 +535,15 @@ case $state in
 
   command_args)
     case $words[2] in # $words[2] is the subcommand
-      encrypt|decrypt|cat|reencrypt|edit|run)
+      encrypt|decrypt|cat|edit|run)
         _files # For these, just complete files
+        ;;
+
+      reencrypt)
+        # Options are listed first, then positional arguments
+        _arguments \
+          '--all' \
+          '*:files:_files'
         ;;
 
       rotate)
