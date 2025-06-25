@@ -71,7 +71,7 @@ agevault_encrypt() {
   done
 }
 
-_agevault_decrypt_to_stdout() {
+agevault_decrypt_to_stdout() {
   if [ $# -eq 0 ]; then
     echo "missing file." >&2
     return 1
@@ -103,7 +103,7 @@ agevault_decrypt() {
       echo "[WARN] '$d' already exists." >&2
     fi
     tmp_file="$(mktemp -p "$TMP_DIR")"
-    _agevault_decrypt_to_stdout "$f" > "$tmp_file"
+    agevault_decrypt_to_stdout "$f" > "$tmp_file"
     mv "$tmp_file" "$d"
     echo "'$f' is decrypted to '$d'."
   done
@@ -116,7 +116,7 @@ agevault_cat() {
   fi
 
   for f in "$@"; do
-    _agevault_decrypt_to_stdout "$f"
+    agevault_decrypt_to_stdout "$f"
   done
 }
 
