@@ -454,7 +454,7 @@ _comp_cmd_agevault() {
       if [[ "$prev" == "--new-key" ]]; then
         COMPREPLY=( $(compgen -f -- "$cur") )
       else
-        if $has_new_key; then
+        if [[ "$has_new_key" == "true" ]]; then
           COMPREPLY=( $(compgen -f -- "$cur") )
         else
           COMPREPLY=( $(compgen -W "--new-key" -f -- "$cur") )
