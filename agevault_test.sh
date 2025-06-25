@@ -94,6 +94,15 @@ echo "----> Test: reencrypt"
 $AGEVAULT_SCRIPT reencrypt "$ENCRYPTED_FILE"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 
+# Test reencrypt --all
+echo "----> Test: reencrypt --all"
+git -C "$TEST_DIR" init
+git -C "$TEST_DIR" add .
+cd "$TEST_DIR"
+$AGEVAULT_SCRIPT reencrypt --all
+cd -
+$AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+
 # Test rotate
 echo "----> Test: rotate with --new-key"
 $AGEVAULT_SCRIPT rotate --new-key "$ROTATED_AGE_SECRET_KEY_FILE" "$ENCRYPTED_FILE"
