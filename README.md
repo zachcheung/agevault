@@ -91,13 +91,16 @@ my new secret
 $ age-keygen -o ./age.key
 $ age-keygen -y -o ./age.pub ./age.key
 
+# Try decrypting with the new key (should fail because old pubkey was used for encryption)
 $ AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 age: error: no identity matched any of the recipients
 
 $ cat ./age.pub >> .age.txt
+# Re-encrypt the file with the updated recipients
 $ agevault reencrypt secrets.age
 'secrets.age' is reencrypted.
 
+# Now decryption with the new key works
 $ AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 my new secret
 ```
