@@ -90,19 +90,15 @@ my new secret
 
 # age-keygen -o ./age.key
 # age-keygen -y -o ./age.pub ./age.key
-# export AGE_SECRET_KEY_FILE=./age.key
 
-# agevault cat secrets.age
+# AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 age: error: no identity matched any of the recipients
 
-# unset AGE_SECRET_KEY_FILE
 # cat ./age.pub >> .age.txt
-
 # agevault reencrypt secrets.age
 'secrets.age' is reencrypted.
 
-# export AGE_SECRET_KEY_FILE=./age.key
-# agevault cat secrets.age
+# AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 my new secret
 ```
 
