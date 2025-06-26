@@ -125,7 +125,7 @@ You can configure `agevault` with the following environment variables.
 >
 > For best security practices, prefer using `AGE_SECRET_KEY_FILE` over `AGE_SECRET_KEY`.
 
-### 🌐 Key Management
+#### 🌐 Key Management
 
 To enable key management, set the key server URL:
 
@@ -134,18 +134,6 @@ export AGE_KEY_SERVER="https://keys.example.com"
 ```
 
 It expects each key at `$AGE_KEY_SERVER/<username>.pub`.
-
-#### Add a recipient key:
-
-```sh
-agevault key-add alice
-```
-
-#### Re-add (reset) recipient list:
-
-```sh
-agevault key-readd alice bob
-```
 
 ### License
 
