@@ -411,7 +411,9 @@ Commands:
   encrypt       Encrypt file(s)
   decrypt       Decrypt .age file(s)
   cat           Decrypt and print to stdout
-  reencrypt     Re-encrypt file(s) with the current recipients file
+  reencrypt     Re-encrypt file(s) with updated recipients file
+                Options:
+                  --all  Re-encrypt all '*.age' files tracked by Git
   rotate        Re-encrypt file(s) with a new key (and update recipients file)
                 Options:
                   --new-key <file>  Path to the new age private key (default: ./age.key)
