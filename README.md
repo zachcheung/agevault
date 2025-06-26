@@ -62,43 +62,43 @@ In most cases, you can simply use `agevault edit` — it handles encryption, dec
 #### 📂 Example
 
 ```console
-~ # export PS1='# '
-# cd $(mktemp -d)
-# mkdir -pm 0700 ~/.age
-# age-keygen -o ~/.age/age.key && age-keygen -y -o ~/.age/age.pub ~/.age/age.key
-# cp ~/.age/age.pub .age.txt
-# echo "my secret" > secrets
+~ $ export PS1='$ '
+$ cd $(mktemp -d)
+$ mkdir -pm 0700 ~/.age
+$ age-keygen -o ~/.age/age.key && age-keygen -y -o ~/.age/age.pub ~/.age/age.key
+$ cp ~/.age/age.pub .age.txt
+$ echo "my secret" > secrets
 
-# agevault encrypt secrets
+$ agevault encrypt secrets
 'secrets' is encrypted to 'secrets.age'.
-# rm secrets
+$ rm secrets
 
-# agevault decrypt secrets.age
+$ agevault decrypt secrets.age
 'secrets.age' is decrypted to 'secrets'.
 
-# cat secrets && rm secrets
+$ cat secrets && rm secrets
 my secret
 
-# agevault cat secrets.age
+$ agevault cat secrets.age
 my secret
 
-# agevault edit secrets.age
+$ agevault edit secrets.age
 'secrets.age' is updated.
 
-# agevault cat secrets.age
+$ agevault cat secrets.age
 my new secret
 
-# age-keygen -o ./age.key
-# age-keygen -y -o ./age.pub ./age.key
+$ age-keygen -o ./age.key
+$ age-keygen -y -o ./age.pub ./age.key
 
-# AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
+$ AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 age: error: no identity matched any of the recipients
 
-# cat ./age.pub >> .age.txt
-# agevault reencrypt secrets.age
+$ cat ./age.pub >> .age.txt
+$ agevault reencrypt secrets.age
 'secrets.age' is reencrypted.
 
-# AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
+$ AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 my new secret
 ```
 
