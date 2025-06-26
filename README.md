@@ -115,6 +115,7 @@ You can configure `agevault` with the following environment variables.
 | `AGE_RECIPIENTS`      | Comma-separated list of recipients (takes precedence) | (unset)                                            |
 | `AGE_RECIPIENTS_FILE` | Path to the recipients list                           | `.age.txt` in same directory as the encrypted file |
 | `AGE_KEY_SERVER`      | Base URL for remote public keys                       | (must be set if using key commands)                |
+| `AGE_PUBKEY_EXT`      | Extension for Age public keys in the key server       | pub                                                |
 
 > [!NOTE]
 > `AGE_KEY_SERVER` **must be set** if you intend to use `key-add`, `key-get`, or `key-readd`.
@@ -129,7 +130,7 @@ To enable key management, set the key server URL:
 export AGE_KEY_SERVER="https://keys.example.com"
 ```
 
-It expects each key at `$AGE_KEY_SERVER/<username>.pub`.
+By default, agevault expects each key at `$AGE_KEY_SERVER/<username>.pub`.
 
 ### License
 

@@ -6,6 +6,7 @@ set -eu
 AGE_SECRET_KEY_FILE="${AGE_SECRET_KEY_FILE:-$HOME/.age/age.key}"
 AGE_RECIPIENTS_FILE="${AGE_RECIPIENTS_FILE:-.age.txt}"
 AGE_KEY_SERVER="${AGE_KEY_SERVER:-}"
+AGE_PUBKEY_EXT="${AGE_PUBKEY_EXT:-pub}"
 _AGE_RECIPIENTS_FILE=""
 TMP_DIR=""
 
@@ -324,7 +325,7 @@ agevault_key_get() {
   fi
 
   u=$1
-  curl -fsSL "$AGE_KEY_SERVER/$u.pub"
+  curl -fsSL "$AGE_KEY_SERVER/$u.$AGE_PUBKEY_EXT"
 }
 
 agevault_key_add() {
