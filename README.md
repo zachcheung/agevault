@@ -53,8 +53,7 @@ By default, agevault expects an age recipients file named `.age.txt` in the same
 | edit       | Edit encrypted file(s) securely                                | agevault edit secrets.age         |
 | run        | Decrypt and load file(s) into environment, then run command    | agevault run env.age -- npm start |
 | key-add    | Add public key(s) to recipients file                           | agevault key-add alice            |
-| key-get    | Fetch a public key from remote server                          | agevault key-readd alice bob      |
-| key-readd  | Reset and add public key(s)                                    | agevault key-get alice            |
+| key-readd  | Reset and add public key(s)                                    | agevault key-readd alice bob      |
 | completion | Generate shell completion (bash/zsh)                           | agevault completion zsh           |
 | git-setup  | Set up Git integration for agevault diff viewing               | agevault git-setup                |
 
