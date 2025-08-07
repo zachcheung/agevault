@@ -169,24 +169,45 @@ agevault_reencrypt() {
 
 agevault_rotate() {
   if [ $# -eq 0 ]; then
-    echo "Usage: agevault rotate [--new-key KEY_FILE] FILE [FILE...]" >&2
+    echo "Usage: agevault rotate [--new-key KEY_FILE] [--all] [FILE...]" >&2
     return 1
   fi
 
   new_key="./age.key"
-  # parse optional --new-key
-  if [ "$1" = "--new-key" ]; then
-    shift
-    if [ $# -eq 0 ]; then
-      echo "missing key path after --new-key." >&2
-      return 1
-    fi
-    new_key="$1"
-    shift
-  fi
+  # parse optional --new-key and --all
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --new-key)
+        shift
+        if [ $# -eq 0 ]; then
+          echo "missing key path after --new-key." >&2
+          return 1
+        fi
+        new_key="$1"
+        shift
+        ;;
+      --all)
+        shift
+        if ! (git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+          echo "not inside a Git repository." >&2
+          return 1
+        fi
+        repo_root=$(git rev-parse --show-toplevel)
+        set -- $(git -C "$repo_root" ls-files '*.age' | sed "s|^|$repo_root/|") "$@"
+        if [ $# -eq 0 ]; then
+          echo "no tracked .age files found in Git." >&2
+          return 1
+        fi
+        break
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
 
   if [ $# -eq 0 ]; then
-    echo "missing files." >&2
+    echo "missing files. specify one or more files or use the --all option." >&2
     return 1
   fi
 
@@ -417,6 +438,7 @@ Commands:
   rotate        Re-encrypt file(s) with a new key (and update recipients file)
                 Options:
                   --new-key <file>  Path to the new age private key (default: ./age.key)
+                  --all             Rotate all '*.age' files tracked by Git
   edit          Edit encrypted file(s) securely
   run           Decrypt and load file(s) into environment, then run command
   key-add       Add public key(s) to recipients file
@@ -477,18 +499,21 @@ _comp_cmd_agevault() {
       ;;
     rotate)
       local has_new_key=false
+      local has_all=false
       for word in "${COMP_WORDS[@]:1}"; do
         [[ "$word" == "--new-key" ]] && has_new_key=true
+        [[ "$word" == "--all" ]] && has_all=true
       done
 
       if [[ "$prev" == "--new-key" ]]; then
         COMPREPLY=( $(compgen -f -- "$cur") )
+      elif [[ "$has_all" == "true" ]]; then
+        COMPREPLY=()  # no completion if --all is present
       else
-        if [[ "$has_new_key" == "true" ]]; then
-          COMPREPLY=( $(compgen -f -- "$cur") )
-        else
-          COMPREPLY=( $(compgen -W "--new-key" -f -- "$cur") )
-        fi
+        local opts=""
+        [[ "$has_new_key" == "false" ]] && opts="--new-key"
+        opts="$opts --all"
+        COMPREPLY=( $(compgen -W "$opts" -f -- "$cur") )
       fi
       return 0
       ;;
@@ -553,6 +578,7 @@ case $state in
         # Options are listed first, then positional arguments
         _arguments \
           '--new-key[Path to new age key file]:file:_files' \
+          '--all[Rotate all .age files tracked by Git]' \
           '*:files:_files'
         ;;
 
