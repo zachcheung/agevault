@@ -128,6 +128,23 @@ $AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
 RESULT=$($AGEVAULT_SCRIPT run "$TEST_DIR/envfile.age" -- sh -c 'echo $TEST_VAR')
 [ "$RESULT" = "42" ] || fail "agevault run did not set TEST_VAR"
 
+# Test run --decrypt-only: decrypt files instead of loading env
+echo "----> Test: run --decrypt-only"
+echo "SECRET_DATA=sensitive" > "$TEST_DIR/datafile"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/datafile"
+rm "$TEST_DIR/datafile"
+
+# Should decrypt the file without loading as env vars
+$AGEVAULT_SCRIPT run --decrypt-only "$TEST_DIR/datafile.age" -- test -f "$TEST_DIR/datafile"
+[ -f "$TEST_DIR/datafile" ] || fail "agevault run --decrypt-only did not decrypt file"
+
+# Verify the content is correct
+CONTENT=$(cat "$TEST_DIR/datafile")
+[ "$CONTENT" = "SECRET_DATA=sensitive" ] || fail "agevault run --decrypt-only content incorrect"
+
+# Clean up for next test
+rm "$TEST_DIR/datafile"
+
 # Test key-add and key-readd
 echo "----> Test: key-add"
 mkdir -p "$TEST_DIR/keysrv"

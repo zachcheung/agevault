@@ -295,8 +295,15 @@ agevault_edit() {
 }
 
 agevault_run() {
+  # check for --decrypt-only option
+  load_env=true
+  if [ "$1" = "--decrypt-only" ]; then
+    load_env=false
+    shift
+  fi
+
   # collect files until we hit "--"
-  env_files=""
+  files=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --)
@@ -304,14 +311,14 @@ agevault_run() {
         break
         ;;
       *)
-        env_files="$env_files $1"
+        files="$files $1"
         shift
         ;;
     esac
   done
 
-  if [ -z "$env_files" ]; then
-    echo "no env files provided" >&2
+  if [ -z "$files" ]; then
+    echo "no files provided" >&2
     return 1
   fi
 
@@ -322,14 +329,18 @@ agevault_run() {
 
   make_tmp_dir
 
-  set -a
-  for f in $env_files; do
-    tmp_env="$TMP_DIR/${f##*/}"
-    agevault_cat "$f" >> "$tmp_env"
-    . "$tmp_env"
-    rm -f -- "$tmp_env"
-  done
-  set +a
+  if [ "$load_env" = true ]; then
+    set -a
+    for f in $files; do
+      tmp_env="$TMP_DIR/${f##*/}"
+      agevault_cat "$f" >> "$tmp_env"
+      . "$tmp_env"
+      rm -f -- "$tmp_env"
+    done
+    set +a
+  else
+    agevault_decrypt $files
+  fi
 
   exec "$@"
 }
@@ -441,6 +452,8 @@ Commands:
                   --all             Rotate all '*.age' files tracked by Git
   edit          Edit encrypted file(s) securely
   run           Decrypt and load file(s) into environment, then run command
+                Options:
+                  --decrypt-only  Decrypt files without loading as environment variables
   key-add       Add public key(s) to recipients file
   key-get       Fetch a public key from remote server
   key-readd     Reset and add public key(s)
@@ -480,8 +493,25 @@ _comp_cmd_agevault() {
   fi
 
   case "${COMP_WORDS[1]}" in
-    encrypt|decrypt|cat|edit|run)
+    encrypt|decrypt|cat|edit)
       COMPREPLY=( $(compgen -f -- "$cur") )
+      return 0
+      ;;
+    run)
+      local has_decrypt_only=false
+      local found_separator=false
+      for word in "${COMP_WORDS[@]:1}"; do
+        [[ "$word" == "--decrypt-only" ]] && has_decrypt_only=true
+        [[ "$word" == "--" ]] && found_separator=true
+      done
+
+      if [[ "$found_separator" == "true" ]]; then
+        COMPREPLY=( $(compgen -c -- "$cur") )
+      elif [[ "$prev" == "run" && "$has_decrypt_only" == "false" ]]; then
+        COMPREPLY=( $(compgen -W "--decrypt-only --" -f -- "$cur") )
+      else
+        COMPREPLY=( $(compgen -W "--" -f -- "$cur") )
+      fi
       return 0
       ;;
     reencrypt)
@@ -563,8 +593,22 @@ case $state in
 
   command_args)
     case $words[2] in # $words[2] is the subcommand
-      encrypt|decrypt|cat|edit|run)
+      encrypt|decrypt|cat|edit)
         _files # For these, just complete files
+        ;;
+
+      run)
+        if [[ ${words[CURRENT]} == "--" ]]; then
+          _command_names
+        elif [[ ${words[*]} == *"--"* ]]; then
+          _command_names
+        elif [[ $CURRENT -eq 3 && ${words[3]} != "--decrypt-only" ]]; then
+          _values 'option' --decrypt-only --
+          _files -g "*.age"
+        else
+          _values 'separator' --
+          _files -g "*.age"
+        fi
         ;;
 
       reencrypt)

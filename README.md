@@ -43,19 +43,20 @@ compinit
 
 By default, agevault expects an age recipients file named `.age.txt` in the same directory as the secret file. You can override this behavior by setting the `AGE_RECIPIENTS` or `AGE_RECIPIENTS_FILE` environment variable.
 
-| Command    | Description                                                    | Example                           |
-| ---------- | -------------------------------------------------------------- | --------------------------------- |
-| encrypt    | Encrypt file(s)                                                | agevault encrypt secrets          |
-| decrypt    | Decrypt .age file(s)                                           | agevault decrypt secrets.age      |
-| cat        | Decrypt and print to stdout                                    | agevault cat secrets.age          |
-| reencrypt  | Re-encrypt file(s) with updated recipients file                | agevault reencrypt secrets.age    |
-| rotate     | Re-encrypt file(s) with a new key (and update recipients file) | agevault rotate secrets.age       |
-| edit       | Edit encrypted file(s) securely                                | agevault edit secrets.age         |
-| run        | Decrypt and load file(s) into environment, then run command    | agevault run env.age -- npm start |
-| key-add    | Add public key(s) to recipients file                           | agevault key-add alice            |
-| key-readd  | Reset and add public key(s)                                    | agevault key-readd alice bob      |
-| completion | Generate shell completion (bash/zsh)                           | agevault completion zsh           |
-| git-setup  | Set up Git integration for agevault diff viewing               | agevault git-setup                |
+| Command    | Description                                                    | Example                                              |
+| ---------- | -------------------------------------------------------------- | ---------------------------------------------------- |
+| encrypt    | Encrypt file(s)                                                | agevault encrypt secrets                             |
+| decrypt    | Decrypt .age file(s)                                           | agevault decrypt secrets.age                         |
+| cat        | Decrypt and print to stdout                                    | agevault cat secrets.age                             |
+| reencrypt  | Re-encrypt file(s) with updated recipients file                | agevault reencrypt secrets.age                       |
+| rotate     | Re-encrypt file(s) with a new key (and update recipients file) | agevault rotate secrets.age                          |
+| edit       | Edit encrypted file(s) securely                                | agevault edit secrets.age                            |
+| run        | Decrypt and load file(s) into environment, then run command    | agevault run env.age -- npm start                    |
+|            | Options: `--decrypt-only` - Decrypt files without loading env  | agevault run --decrypt-only secrets.age -- npm start |
+| key-add    | Add public key(s) to recipients file                           | agevault key-add alice                               |
+| key-readd  | Reset and add public key(s)                                    | agevault key-readd alice bob                         |
+| completion | Generate shell completion (bash/zsh)                           | agevault completion zsh                              |
+| git-setup  | Set up Git integration for agevault diff viewing               | agevault git-setup                                   |
 
 In most cases, you can simply use `agevault edit` — it handles encryption, decryption, and editing of secrets in one step.
 
@@ -104,6 +105,29 @@ $ agevault reencrypt secrets.age
 $ AGE_SECRET_KEY_FILE=./age.key agevault cat secrets.age
 my new secret
 ```
+
+#### 🏃 Run Command Examples
+
+The `run` command has two modes of operation:
+
+**Environment Mode (default):**
+
+```console
+$ echo "API_KEY=secret123" > .env
+$ agevault encrypt .env
+$ agevault run .env.age -- curl -H "Authorization: Bearer $API_KEY" api.example.com
+```
+
+**Decrypt-only Mode:**
+
+```console
+$ echo "sensitive data" > secret.txt
+$ agevault encrypt secret.txt
+$ agevault run --decrypt-only secret.txt.age -- cat secret.txt
+sensitive data
+```
+
+The `--decrypt-only` option decrypts files to their original locations without loading them as environment variables, useful for commands that need access to decrypted files rather than environment variables.
 
 ### 🔐 Configuration
 
