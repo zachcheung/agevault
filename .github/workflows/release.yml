@@ -18,7 +18,7 @@ jobs:
         run: |
           if [ -f "RELEASE_NOTES.md" ]; then
             # Extract notes for this version using sed
-            NOTES=$(sed -n "/Release Notes.*$TAG_NAME/,/Release Notes.*v[0-9]/p" RELEASE_NOTES.md | sed '$d' | tail -n +2)
+            NOTES=$(sed -n "/Release Notes.*$TAG_NAME/,/Release Notes.*v[0-9]/p" RELEASE_NOTES.md | sed '$d' | tail -n +2 | tac | sed '1{/^$/d};2{/^---$/d};3{/^$/d}' | tac)
 
             if [ -n "$NOTES" ]; then
               echo "✅ Found release notes for $TAG_NAME"
