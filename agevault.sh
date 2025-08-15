@@ -146,7 +146,7 @@ agevault_reencrypt() {
     shift
     if ! (git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
       echo "Cannot access Git repository:" >&2
-      git rev-parse --is-inside-work-tree 2>&1 >&2
+      git rev-parse --is-inside-work-tree
       return 1
     fi
     repo_root=$(git rev-parse --show-toplevel)
@@ -191,7 +191,7 @@ agevault_rotate() {
         shift
         if ! (git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
           echo "Cannot access Git repository:" >&2
-          git rev-parse --is-inside-work-tree 2>&1 >&2
+          git rev-parse --is-inside-work-tree
           return 1
         fi
         repo_root=$(git rev-parse --show-toplevel)
@@ -394,7 +394,7 @@ agevault_git_setup() {
 
   if ! (git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
     echo "Cannot access Git repository:" >&2
-    git rev-parse --is-inside-work-tree 2>&1 >&2
+    git rev-parse --is-inside-work-tree
     return 1
   fi
 
