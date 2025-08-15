@@ -1,3 +1,40 @@
+# Release Notes - agevault v1.1.0
+
+## v1.1.0 - Enhanced Run Command (August 14, 2024)
+
+### 🎉 What's New
+
+#### Enhanced `run` Command
+- **`--decrypt-only` option** - Decrypt files without loading them as environment variables
+- **Dual-mode operation** - Choose between environment loading (default) or file decryption
+- **Improved flexibility** - Better support for commands that need access to decrypted files
+
+### ✨ Features
+
+#### Core Enhancements
+- **Enhanced `run` command** with `--decrypt-only` flag for file decryption workflows
+- **Improved shell completion** - Smart completion for new option and command contexts
+- **Better documentation** - Comprehensive examples showing both run modes
+
+### 🔧 Usage Examples
+
+**Environment Mode (default):**
+```bash
+agevault run secrets.env.age -- ./deploy.sh
+```
+
+**Decrypt-only Mode:**
+```bash
+agevault run --decrypt-only config.json.age cert.pem.age -- docker run -v $(pwd):/data myapp
+```
+
+### 🛠️ Improvements
+- Enhanced bash and zsh completion for `run` command options
+- Updated help text with clear option descriptions
+- Comprehensive test coverage for new functionality
+
+---
+
 # Release Notes - agevault v1.0.0
 
 ## v1.0.0 - Initial Release (August 14, 2024)
