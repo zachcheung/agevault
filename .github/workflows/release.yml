@@ -1,0 +1,35 @@
+name: Create Release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -f "RELEASE_NOTES.md" ]; then
+            # Extract notes for this version using sed
+            NOTES=$(sed -n "/Release Notes.*$TAG_NAME/,/Release Notes.*v[0-9]/p" RELEASE_NOTES.md | sed '$d' | tail -n +2)
+
+            if [ -n "$NOTES" ]; then
+              echo "✅ Found release notes for $TAG_NAME"
+              echo "$NOTES" > temp_notes.md
+              gh release create "$TAG_NAME" --title "Release $TAG_NAME" --notes-file temp_notes.md
+              rm temp_notes.md
+            else
+              echo "❌ No notes found for $TAG_NAME, using auto-generated"
+              gh release create "$TAG_NAME" --title "Release $TAG_NAME" --generate-notes
+            fi
+          else
+            echo "❌ No RELEASE_NOTES.md found, using auto-generated"
+            gh release create "$TAG_NAME" --title "Release $TAG_NAME" --generate-notes
+          fi
