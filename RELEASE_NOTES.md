@@ -1,3 +1,102 @@
+# Release Notes - agevault v1.2.0
+
+## v1.2.0 - Enhanced Run Command with Breaking Changes (August 15, 2024)
+
+### ⚠️ Breaking Changes
+
+This release introduces breaking changes to the `run` command syntax. Please update your scripts accordingly.
+
+#### Changed `run` Command Syntax
+
+**v1.1.0 (old):**
+```bash
+agevault run [--decrypt-only] files -- command
+```
+
+**v1.2.0 (new):**
+```bash
+agevault run [--env files] [--decrypt files] -- command
+```
+
+### 🎉 What's New
+
+#### Completely Redesigned `run` Command
+- **`--env` flag** - Explicitly specify files to load as environment variables
+- **`--decrypt` flag** - Replaces `--decrypt-only` for file decryption
+- **Combined operations** - Use both `--env` and `--decrypt` in a single command
+- **Comma-separated files** - Support multiple files with comma separation
+- **Backwards compatibility** - Files without flags are treated as environment files
+
+### ✨ Features
+
+#### Enhanced Run Command Capabilities
+- **Multiple file types** - Process environment and decrypt files simultaneously
+- **Flexible syntax** - Mix and match `--env` and `--decrypt` as needed
+- **Batch processing** - Handle multiple files with comma-separated lists
+- **Improved error handling** - Better validation and error messages
+
+### 🔧 Usage Examples
+
+**Environment Mode (backwards compatible):**
+```bash
+agevault run config.env.age -- ./deploy.sh
+```
+
+**Explicit Environment Mode:**
+```bash
+agevault run --env database.env.age -- ./start-app.sh
+```
+
+**Decrypt-only Mode:**
+```bash
+agevault run --decrypt cert.pem.age -- docker run -v $(pwd):/certs myapp
+```
+
+**Combined Mode:**
+```bash
+agevault run --env app.env.age --decrypt cert.pem.age,key.pem.age -- ./start-server.sh
+```
+
+**Multiple Environment Files:**
+```bash
+agevault run --env "app.env.age,db.env.age,cache.env.age" -- ./deploy.sh
+```
+
+### 🛠️ Migration Guide
+
+To migrate from v1.1.0 to v1.2.0:
+
+1. **Replace `--decrypt-only` with `--decrypt`:**
+   ```bash
+   # Old (v1.1.0)
+   agevault run --decrypt-only secrets.age -- command
+   
+   # New (v1.2.0)
+   agevault run --decrypt secrets.age -- command
+   ```
+
+2. **Consider using explicit `--env` flag for clarity:**
+   ```bash
+   # Still works (backwards compatible)
+   agevault run config.env.age -- command
+   
+   # More explicit (recommended)
+   agevault run --env config.env.age -- command
+   ```
+
+3. **Take advantage of combined operations:**
+   ```bash
+   # Now possible in v1.2.0
+   agevault run --env config.env.age --decrypt cert.pem.age -- command
+   ```
+
+### 🧪 Testing
+- Comprehensive test coverage for all new syntax variations
+- Backwards compatibility tests to ensure existing workflows continue working
+- Edge case testing for comma-separated file lists and combined operations
+
+---
+
 # Release Notes - agevault v1.1.0
 
 ## v1.1.0 - Enhanced Run Command (August 14, 2024)

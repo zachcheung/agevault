@@ -52,7 +52,8 @@ By default, agevault expects an age recipients file named `.age.txt` in the same
 | rotate     | Re-encrypt file(s) with a new key (and update recipients file) | agevault rotate secrets.age                          |
 | edit       | Edit encrypted file(s) securely                                | agevault edit secrets.age                            |
 | run        | Decrypt and load file(s) into environment, then run command    | agevault run env.age -- npm start                    |
-|            | Options: `--decrypt-only` - Decrypt files without loading env  | agevault run --decrypt-only secrets.age -- npm start |
+|            | Options: `--env` - Load files as environment variables         | agevault run --env secrets.env.age -- npm start      |
+|            | Options: `--decrypt` - Decrypt files without loading env       | agevault run --decrypt secrets.age -- npm start      |
 | key-add    | Add public key(s) to recipients file                           | agevault key-add alice                               |
 | key-readd  | Reset and add public key(s)                                    | agevault key-readd alice bob                         |
 | completion | Generate shell completion (bash/zsh)                           | agevault completion zsh                              |
@@ -108,9 +109,9 @@ my new secret
 
 #### 🏃 Run Command Examples
 
-The `run` command has two modes of operation:
+The `run` command supports multiple modes of operation:
 
-**Environment Mode (default):**
+**Environment Mode (default - backwards compatible):**
 
 ```console
 $ echo "API_KEY=secret123" > .env
@@ -118,16 +119,39 @@ $ agevault encrypt .env
 $ agevault run .env.age -- curl -H "Authorization: Bearer $API_KEY" api.example.com
 ```
 
+**Explicit Environment Mode:**
+
+```console
+$ echo "DB_PASSWORD=secret" > database.env
+$ agevault encrypt database.env
+$ agevault run --env database.env.age -- ./deploy.sh
+```
+
 **Decrypt-only Mode:**
 
 ```console
 $ echo "sensitive data" > secret.txt
 $ agevault encrypt secret.txt
-$ agevault run --decrypt-only secret.txt.age -- cat secret.txt
+$ agevault run --decrypt secret.txt.age -- cat secret.txt
 sensitive data
 ```
 
-The `--decrypt-only` option decrypts files to their original locations without loading them as environment variables, useful for commands that need access to decrypted files rather than environment variables.
+**Combined Mode (environment + decryption):**
+
+```console
+$ agevault run --env config.env.age --decrypt cert.pem.age -- docker run -v $(pwd):/data myapp
+```
+
+**Comma-separated Files:**
+
+```console
+$ agevault run --env "app.env.age,db.env.age" --decrypt "cert.pem.age,key.pem.age" -- ./start-server.sh
+```
+
+- `--env` loads files as environment variables
+- `--decrypt` decrypts files to their original locations without loading as environment variables
+- Files without flags are treated as environment files (backwards compatibility)
+- Both options support comma-separated file lists
 
 ### 🔐 Configuration
 

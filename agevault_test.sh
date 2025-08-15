@@ -120,30 +120,63 @@ $AGEVAULT_SCRIPT edit "$ENCRYPTED_FILE"
 CHANGED=$($AGEVAULT_SCRIPT cat "$ENCRYPTED_FILE")
 [ "$CHANGED" = "hello universe" ] || fail "Edit did not apply"
 
-# Test run: load env from .age and run command
-echo "----> Test: run"
+# Test run: load env from .age and run command (backwards compatibility)
+echo "----> Test: run (backwards compatibility)"
 echo "TEST_VAR=42" > "$TEST_DIR/envfile"
 $AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile"
 
 RESULT=$($AGEVAULT_SCRIPT run "$TEST_DIR/envfile.age" -- sh -c 'echo $TEST_VAR')
 [ "$RESULT" = "42" ] || fail "agevault run did not set TEST_VAR"
 
-# Test run --decrypt-only: decrypt files instead of loading env
-echo "----> Test: run --decrypt-only"
+# Test run with --env flag
+echo "----> Test: run --env"
+echo "ENV_VAR=test123" > "$TEST_DIR/envfile2"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/envfile2"
+
+RESULT=$($AGEVAULT_SCRIPT run --env "$TEST_DIR/envfile2.age" -- sh -c 'echo $ENV_VAR')
+[ "$RESULT" = "test123" ] || fail "agevault run --env did not set ENV_VAR"
+
+# Test run --decrypt: decrypt files instead of loading env
+echo "----> Test: run --decrypt"
 echo "SECRET_DATA=sensitive" > "$TEST_DIR/datafile"
 $AGEVAULT_SCRIPT encrypt "$TEST_DIR/datafile"
 rm "$TEST_DIR/datafile"
 
 # Should decrypt the file without loading as env vars
-$AGEVAULT_SCRIPT run --decrypt-only "$TEST_DIR/datafile.age" -- test -f "$TEST_DIR/datafile"
-[ -f "$TEST_DIR/datafile" ] || fail "agevault run --decrypt-only did not decrypt file"
+$AGEVAULT_SCRIPT run --decrypt "$TEST_DIR/datafile.age" -- test -f "$TEST_DIR/datafile"
+[ -f "$TEST_DIR/datafile" ] || fail "agevault run --decrypt did not decrypt file"
 
 # Verify the content is correct
 CONTENT=$(cat "$TEST_DIR/datafile")
-[ "$CONTENT" = "SECRET_DATA=sensitive" ] || fail "agevault run --decrypt-only content incorrect"
+[ "$CONTENT" = "SECRET_DATA=sensitive" ] || fail "agevault run --decrypt content incorrect"
 
 # Clean up for next test
 rm "$TEST_DIR/datafile"
+
+# Test run with both --env and --decrypt
+echo "----> Test: run --env and --decrypt"
+echo "DEPLOY_ENV=production" > "$TEST_DIR/deploy.env"
+echo "database.conf content" > "$TEST_DIR/database.conf"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/deploy.env"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/database.conf"
+rm "$TEST_DIR/deploy.env" "$TEST_DIR/database.conf"
+
+RESULT=$($AGEVAULT_SCRIPT run --env "$TEST_DIR/deploy.env.age" --decrypt "$TEST_DIR/database.conf.age" -- sh -c "test -f \"$TEST_DIR/database.conf\" && echo \$DEPLOY_ENV")
+[ "$RESULT" = "production" ] || fail "agevault run --env and --decrypt failed"
+[ -f "$TEST_DIR/database.conf" ] || fail "agevault run --env and --decrypt did not decrypt file"
+
+# Clean up for next test
+rm "$TEST_DIR/database.conf"
+
+# Test run with comma-separated files
+echo "----> Test: run with comma-separated files"
+echo "VAR1=value1" > "$TEST_DIR/env1"
+echo "VAR2=value2" > "$TEST_DIR/env2"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/env1"
+$AGEVAULT_SCRIPT encrypt "$TEST_DIR/env2"
+
+RESULT=$($AGEVAULT_SCRIPT run --env "$TEST_DIR/env1.age,$TEST_DIR/env2.age" -- sh -c 'echo "$VAR1:$VAR2"')
+[ "$RESULT" = "value1:value2" ] || fail "agevault run with comma-separated files failed"
 
 # Test key-add and key-readd
 echo "----> Test: key-add"

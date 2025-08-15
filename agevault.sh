@@ -120,7 +120,7 @@ agevault_decrypt() {
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_decrypt_to_stdout "$f" > "$tmp_file"
     mv "$tmp_file" "$d"
-    echo "'$f' is decrypted to '$d'."
+    echo "'$f' is decrypted to '$d'." >&2
   done
 }
 
@@ -297,51 +297,83 @@ agevault_edit() {
 }
 
 agevault_run() {
-  # check for --decrypt-only option
-  load_env=true
-  if [ "$1" = "--decrypt-only" ]; then
-    load_env=false
-    shift
-  fi
+  env_files=""
+  decrypt_files=""
 
-  # collect files until we hit "--"
-  files=""
+  # parse options
   while [ "$#" -gt 0 ]; do
     case "$1" in
+      --env)
+        shift
+        if [ $# -eq 0 ]; then
+          echo "missing files after --env" >&2
+          return 1
+        fi
+        env_files="$1"
+        shift
+        ;;
+      --decrypt)
+        shift
+        if [ $# -eq 0 ]; then
+          echo "missing files after --decrypt" >&2
+          return 1
+        fi
+        decrypt_files="$1"
+        shift
+        ;;
       --)
         shift
         break
         ;;
       *)
-        files="$files $1"
+        # backwards compatibility: files without flags are treated as env files
+        env_files="$env_files $1"
         shift
         ;;
     esac
   done
 
-  if [ -z "$files" ]; then
+  if [ -z "$env_files" ] && [ -z "$decrypt_files" ]; then
     echo "no files provided" >&2
     return 1
   fi
 
   if [ "$#" -eq 0 ]; then
-    echo "no command specified after '--'" >&2
+    echo "no command specified. Use '--' to separate files from command." >&2
     return 1
   fi
 
   make_tmp_dir
 
-  if [ "$load_env" = true ]; then
+  # Load environment files
+  if [ -n "$env_files" ]; then
     set -a
-    for f in $files; do
+    # handle comma-separated list
+    IFS=','
+    for f in $env_files; do
+      # trim whitespace
+      f=$(printf '%s' "$f" | awk '{$1=$1; print}')
       tmp_env="$TMP_DIR/${f##*/}"
       agevault_cat "$f" >> "$tmp_env"
       . "$tmp_env"
       rm -f -- "$tmp_env"
     done
+    unset IFS
     set +a
-  else
-    agevault_decrypt $files
+  fi
+
+  # Decrypt files to original locations
+  if [ -n "$decrypt_files" ]; then
+    # handle comma-separated list and convert to space-separated for agevault_decrypt
+    decrypt_list=""
+    IFS=','
+    for f in $decrypt_files; do
+      # trim whitespace
+      f=$(printf '%s' "$f" | awk '{$1=$1; print}')
+      decrypt_list="$decrypt_list $f"
+    done
+    unset IFS
+    agevault_decrypt $decrypt_list
   fi
 
   exec "$@"
@@ -456,7 +488,8 @@ Commands:
   edit          Edit encrypted file(s) securely
   run           Decrypt and load file(s) into environment, then run command
                 Options:
-                  --decrypt-only  Decrypt files without loading as environment variables
+                  --env FILES     Load files as environment variables
+                  --decrypt FILES Decrypt files without loading as environment variables
   key-add       Add public key(s) to recipients file
   key-get       Fetch a public key from remote server
   key-readd     Reset and add public key(s)
@@ -504,14 +537,16 @@ _comp_cmd_agevault() {
       local has_decrypt_only=false
       local found_separator=false
       for word in "${COMP_WORDS[@]:1}"; do
-        [[ "$word" == "--decrypt-only" ]] && has_decrypt_only=true
+        [[ "$word" == "--env" || "$word" == "--decrypt" ]] && has_decrypt_only=true
         [[ "$word" == "--" ]] && found_separator=true
       done
 
       if [[ "$found_separator" == "true" ]]; then
         COMPREPLY=( $(compgen -c -- "$cur") )
       elif [[ "$prev" == "run" && "$has_decrypt_only" == "false" ]]; then
-        COMPREPLY=( $(compgen -W "--decrypt-only --" -f -- "$cur") )
+        COMPREPLY=( $(compgen -W "--env --decrypt --" -f -- "$cur") )
+      elif [[ "$prev" == "--env" || "$prev" == "--decrypt" ]]; then
+        COMPREPLY=( $(compgen -f -- "$cur") )
       else
         COMPREPLY=( $(compgen -W "--" -f -- "$cur") )
       fi
@@ -605,8 +640,10 @@ case $state in
           _command_names
         elif [[ ${words[*]} == *"--"* ]]; then
           _command_names
-        elif [[ $CURRENT -eq 3 && ${words[3]} != "--decrypt-only" ]]; then
-          _values 'option' --decrypt-only --
+        elif [[ $CURRENT -eq 3 && ${words[3]} != "--env" && ${words[3]} != "--decrypt" ]]; then
+          _values 'option' --env --decrypt --
+          _files -g "*.age"
+        elif [[ ${words[CURRENT-1]} == "--env" || ${words[CURRENT-1]} == "--decrypt" ]]; then
           _files -g "*.age"
         else
           _values 'separator' --
