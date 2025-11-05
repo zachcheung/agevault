@@ -1,3 +1,74 @@
+# Release Notes - agevault v1.3.0
+
+## v1.3.0 - Identity-Based Encryption Support (November 5, 2024)
+
+### 🎉 What's New
+
+#### New `--self` Option for Encrypt Command
+- **Identity-based encryption** - Encrypt files using your own secret key without requiring a recipients file
+- **Simplified workflow** - No need to maintain `.age.txt` files for personal encryption
+- **Flexible key support** - Works with both `AGE_SECRET_KEY` and `AGE_SECRET_KEY_FILE`
+- **Automatic key handling** - Automatically creates temporary files when using inline secret keys
+
+### ✨ Features
+
+#### Enhanced Encrypt Command
+- **`--self` option** - Encrypt files using identity (secret key) instead of recipients file
+- **Dual key support** - Supports both inline (`AGE_SECRET_KEY`) and file-based (`AGE_SECRET_KEY_FILE`) secret keys
+- **Secure temporary file handling** - Automatically manages temporary key files with proper cleanup
+- **Improved workflow** - Encrypt files for personal use without maintaining recipients files
+
+#### Shell Completion Updates
+- **Bash completion** - Smart completion for `--self` option in encrypt command
+- **Zsh completion** - Enhanced completion with `--self` option support
+
+### 🔧 Usage Examples
+
+**Encrypt for yourself (no recipients file needed):**
+```bash
+# Using default secret key file
+agevault encrypt --self secrets.txt
+
+# Using inline secret key
+AGE_SECRET_KEY="$(cat ~/.age/age.key)" agevault encrypt --self secrets.txt
+
+# Using custom secret key file
+AGE_SECRET_KEY_FILE=~/.age/age.key agevault encrypt --self secrets.txt
+```
+
+**Traditional encryption (still supported):**
+```bash
+# Still works as before
+agevault encrypt secrets.txt
+```
+
+**Use cases:**
+```bash
+# Personal notes encryption
+agevault encrypt --self personal-notes.txt
+
+# Backup encryption
+agevault encrypt --self backup.tar.gz
+
+# Quick encryption without setup
+agevault encrypt --self sensitive-data.json
+```
+
+### 🛠️ Technical Details
+
+The `--self` option uses age's `-i/--identity` flag, which encrypts to the recipients corresponding to the identities (secret keys) listed in the file. This is equivalent to converting the secret key to a recipients file with `age-keygen -y` and then using that for encryption.
+
+- When `AGE_SECRET_KEY` is set, the secret key is written to a temporary file for use with age
+- When `AGE_SECRET_KEY_FILE` is used, the file path is passed directly to age
+- Temporary files are automatically cleaned up via the existing cleanup mechanism
+
+### 🧪 Testing
+- Comprehensive test coverage for `--self` option with both key methods
+- Verification that encrypted files can be decrypted correctly
+- Tests for edge cases and error handling
+
+---
+
 # Release Notes - agevault v1.2.0
 
 ## v1.2.0 - Enhanced Run Command with Breaking Changes (August 15, 2024)
