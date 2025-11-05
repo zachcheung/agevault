@@ -58,6 +58,31 @@ echo "----> Test: encryption"
 $AGEVAULT_SCRIPT encrypt "$TEST_FILE"
 [ -f "$ENCRYPTED_FILE" ] || fail "Encryption failed"
 
+# Test encryption with --self using AGE_SECRET_KEY_FILE
+echo "----> Test: encryption with --self (AGE_SECRET_KEY_FILE)"
+rm -f "$ENCRYPTED_FILE"
+unset AGE_SECRET_KEY
+export AGE_SECRET_KEY_FILE="$_AGE_SECRET_KEY_FILE"
+$AGEVAULT_SCRIPT encrypt --self "$TEST_FILE"
+[ -f "$ENCRYPTED_FILE" ] || fail "Encryption with --self failed"
+$AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption after --self encryption did not match original"
+rm "$TEST_FILE"
+
+# Test encryption with --self using AGE_SECRET_KEY
+echo "----> Test: encryption with --self (AGE_SECRET_KEY)"
+rm -f "$ENCRYPTED_FILE"
+cp "$TEST_FILE.orig" "$TEST_FILE"
+export AGE_SECRET_KEY="$_AGE_SECRET_KEY"
+unset AGE_SECRET_KEY_FILE
+$AGEVAULT_SCRIPT encrypt --self "$TEST_FILE"
+[ -f "$ENCRYPTED_FILE" ] || fail "Encryption with --self (AGE_SECRET_KEY) failed"
+$AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+cmp "$TEST_FILE" "$TEST_FILE.orig" || fail "Decryption after --self encryption (AGE_SECRET_KEY) did not match original"
+rm "$TEST_FILE"
+unset AGE_SECRET_KEY
+export AGE_SECRET_KEY_FILE="$_AGE_SECRET_KEY_FILE"
+
 # Test decryption with AGE_SECRET_KEY_FILE
 echo "----> Test: decryption with AGE_SECRET_KEY_FILE"
 unset AGE_SECRET_KEY

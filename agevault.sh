@@ -71,19 +71,59 @@ get_age_recipients_file() {
 }
 
 agevault_encrypt() {
+  encrypt_self=false
+
+  # parse --self option
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --self)
+        encrypt_self=true
+        shift
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
   if [ $# -eq 0 ]; then
     echo "missing files." >&2
     return 1
   fi
 
-  for f in "$@"; do
-    if [ -e "$f.age" ]; then
-      echo "[WARN] '$f.age' already exists." >&2
+  if [ "$encrypt_self" = true ]; then
+    # encrypt using identity (secret key)
+    if [ -n "${AGE_SECRET_KEY:-}" ]; then
+      # AGE_SECRET_KEY is set, write to temp file
+      make_tmp_dir
+      tmp_key_file="$(mktemp -p "$TMP_DIR")"
+      printf '%s' "$AGE_SECRET_KEY" > "$tmp_key_file"
+      identity_file="$tmp_key_file"
+    elif [ -r "$AGE_SECRET_KEY_FILE" ]; then
+      identity_file="$AGE_SECRET_KEY_FILE"
+    else
+      echo "AGE_SECRET_KEY or AGE_SECRET_KEY_FILE must be set for --self encryption." >&2
+      return 1
     fi
-    get_age_recipients_file "$f"
-    age -R "$_AGE_RECIPIENTS_FILE" -o "$f.age" "$f"
-    echo "'$f' is encrypted to '$f.age'."
-  done
+
+    for f in "$@"; do
+      if [ -e "$f.age" ]; then
+        echo "[WARN] '$f.age' already exists." >&2
+      fi
+      age -e -i "$identity_file" -o "$f.age" "$f"
+      echo "'$f' is encrypted to '$f.age'."
+    done
+  else
+    # encrypt using recipients file (existing behavior)
+    for f in "$@"; do
+      if [ -e "$f.age" ]; then
+        echo "[WARN] '$f.age' already exists." >&2
+      fi
+      get_age_recipients_file "$f"
+      age -R "$_AGE_RECIPIENTS_FILE" -o "$f.age" "$f"
+      echo "'$f' is encrypted to '$f.age'."
+    done
+  fi
 }
 
 agevault_decrypt_to_stdout() {
@@ -476,6 +516,8 @@ Usage: agevault <command> [options] [files...]
 
 Commands:
   encrypt       Encrypt file(s)
+                Options:
+                  --self  Encrypt using identity (secret key) instead of recipients file
   decrypt       Decrypt .age file(s)
   cat           Decrypt and print to stdout
   reencrypt     Re-encrypt file(s) with updated recipients file
@@ -529,7 +571,19 @@ _comp_cmd_agevault() {
   fi
 
   case "${COMP_WORDS[1]}" in
-    encrypt|decrypt|cat|edit)
+    encrypt)
+      local has_self=false
+      for word in "${COMP_WORDS[@]:1}"; do
+        [[ "$word" == "--self" ]] && has_self=true
+      done
+      if [[ "$has_self" == "true" ]]; then
+        COMPREPLY=( $(compgen -f -- "$cur") )
+      else
+        COMPREPLY=( $(compgen -W "--self" -f -- "$cur") )
+      fi
+      return 0
+      ;;
+    decrypt|cat|edit)
       COMPREPLY=( $(compgen -f -- "$cur") )
       return 0
       ;;
@@ -631,7 +685,13 @@ case $state in
 
   command_args)
     case $words[2] in # $words[2] is the subcommand
-      encrypt|decrypt|cat|edit)
+      encrypt)
+        # Options are listed first, then positional arguments
+        _arguments \
+          '--self[Encrypt using identity instead of recipients file]' \
+          '*:files:_files'
+        ;;
+      decrypt|cat|edit)
         _files # For these, just complete files
         ;;
 

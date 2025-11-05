@@ -46,6 +46,7 @@ By default, agevault expects an age recipients file named `.age.txt` in the same
 | Command    | Description                                                    | Example                                              |
 | ---------- | -------------------------------------------------------------- | ---------------------------------------------------- |
 | encrypt    | Encrypt file(s)                                                | agevault encrypt secrets                             |
+|            | Options: `--self` - Encrypt using identity (secret key)        | agevault encrypt --self secrets                      |
 | decrypt    | Decrypt .age file(s)                                           | agevault decrypt secrets.age                         |
 | cat        | Decrypt and print to stdout                                    | agevault cat secrets.age                             |
 | reencrypt  | Re-encrypt file(s) with updated recipients file                | agevault reencrypt secrets.age                       |
@@ -74,6 +75,10 @@ $ echo "my secret" > secrets
 $ agevault encrypt secrets
 'secrets' is encrypted to 'secrets.age'.
 $ rm secrets
+
+# Encrypt using your own identity (no recipients file needed)
+$ agevault encrypt --self secrets
+'secrets' is encrypted to 'secrets.age'.
 
 $ agevault decrypt secrets.age
 'secrets.age' is decrypted to 'secrets'.
