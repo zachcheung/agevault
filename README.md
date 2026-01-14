@@ -28,13 +28,15 @@ source <(agevault completion bash)
 - **Zsh**
 
 ```sh
-agevault completion zsh | sudo tee /usr/share/zsh/site-functions/_agevault > /dev/null
+mkdir -p ~/.zsh/completions
+agevault completion zsh > ~/.zsh/completions/_agevault
 ```
 
-Ensure Zsh completion is initialized:
+Then add to your `~/.zshrc`:
 
 ```sh
 # ~/.zshrc
+fpath=(~/.zsh/completions $fpath)
 autoload -Uz compinit
 compinit
 ```
