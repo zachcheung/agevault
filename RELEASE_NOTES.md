@@ -1,3 +1,21 @@
+# Release Notes - agevault v1.3.1
+
+## v1.3.1 - Fail Early and Documentation Polish (February 3, 2026)
+
+### ✨ Improvements
+
+#### Fail Early on Missing Recipients Configuration
+- **`edit` command** - Now checks for `AGE_RECIPIENTS` or recipients file *before* opening the editor. This prevents users from spending time editing a file that cannot be encrypted.
+- **`reencrypt` command** - Now checks for recipients configuration before decrypting the file, ensuring a cleaner failure path.
+
+### 📝 Documentation
+
+#### Zsh Completion Installation
+- Updated recommended installation path to `~/.zsh/completions` to follow modern Zsh practices and avoid SIP (System Integrity Protection) issues on macOS.
+- Added explicit instructions for updating `fpath` in `~/.zshrc`.
+
+---
+
 # Release Notes - agevault v1.3.0
 
 ## v1.3.0 - Identity-Based Encryption Support (November 5, 2024)
