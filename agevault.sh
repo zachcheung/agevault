@@ -199,9 +199,9 @@ agevault_reencrypt() {
 
   make_tmp_dir
   for f in "$@"; do
+    get_age_recipients_file "$f" || return 1
     tmp_file="$(mktemp -p "$TMP_DIR")"
     agevault_cat "$f" > "$tmp_file"
-    get_age_recipients_file "$f"
     age -R "$_AGE_RECIPIENTS_FILE" -o "$f" "$tmp_file"
     echo "'$f' is reencrypted."
     rm -f -- "$tmp_file"
@@ -280,6 +280,7 @@ agevault_edit() {
   make_tmp_dir
 
   for f in "$@"; do
+    get_age_recipients_file "$f" || return 1
     base=$(basename "$f" .age)
     tmp_file="$(mktemp -p "$TMP_DIR" "agevault-edit-XXXXXX.$base")"
     encrypted_file_exists=false
@@ -324,7 +325,6 @@ agevault_edit() {
 
     if [ "$orig_hash" != "$new_hash" ] || { [ ! -s "$tmp_file" ] && [ "$encrypted_file_exists" = false ]; }; then
       # file changes or (file is empty and encrypted_file does not exist)
-      get_age_recipients_file "$f"
       age -R "$_AGE_RECIPIENTS_FILE" -o "$encrypted_file" "$tmp_file"
       if [ "$encrypted_file_exists" = false ]; then
         echo "'$encrypted_file' is encrypted."
