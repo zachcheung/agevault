@@ -134,6 +134,23 @@ $AGEVAULT_SCRIPT rotate --new-key "$ROTATED_AGE_SECRET_KEY_FILE" "$ENCRYPTED_FIL
 export AGE_SECRET_KEY_FILE="$ROTATED_AGE_SECRET_KEY_FILE"
 $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
 
+# Test rotate with --keep-old-key
+echo "----> Test: rotate with --keep-old-key"
+KEEP_OLD_KEY_FILE="$TEST_DIR/keepold.key"
+OLD_KEY_FILE="$AGE_SECRET_KEY_FILE"
+$AGEVAULT_SCRIPT rotate --new-key "$KEEP_OLD_KEY_FILE" --keep-old-key "$ENCRYPTED_FILE"
+# both old and new keys should decrypt
+AGE_SECRET_KEY_FILE="$OLD_KEY_FILE" $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+rm "$TEST_FILE"
+AGE_SECRET_KEY_FILE="$KEEP_OLD_KEY_FILE" $AGEVAULT_SCRIPT decrypt "$ENCRYPTED_FILE"
+rm "$TEST_FILE"
+# running --keep-old-key again should not duplicate the new key
+old_recipient_count=$(wc -l < "$AGE_RECIPIENTS_FILE")
+$AGEVAULT_SCRIPT rotate --new-key "$KEEP_OLD_KEY_FILE" --keep-old-key "$ENCRYPTED_FILE"
+new_recipient_count=$(wc -l < "$AGE_RECIPIENTS_FILE")
+[ "$old_recipient_count" = "$new_recipient_count" ] || fail "rotate --keep-old-key duplicated recipient"
+export AGE_SECRET_KEY_FILE="$KEEP_OLD_KEY_FILE"
+
 # Test edit (non-interactive: simulate editor)
 echo "----> Test: edit"
 if (sed --version >/dev/null 2>&1); then

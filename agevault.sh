@@ -210,12 +210,13 @@ agevault_reencrypt() {
 
 agevault_rotate() {
   if [ $# -eq 0 ]; then
-    echo "Usage: agevault rotate [--new-key KEY_FILE] [--all] [FILE...]" >&2
+    echo "Usage: agevault rotate [--new-key KEY_FILE] [--keep-old-key] [--all] [FILE...]" >&2
     return 1
   fi
 
   new_key="./age.key"
-  # parse optional --new-key and --all
+  keep_old_key=false
+  # parse optional --new-key, --keep-old-key and --all
   while [ $# -gt 0 ]; do
     case "$1" in
       --new-key)
@@ -225,6 +226,10 @@ agevault_rotate() {
           return 1
         fi
         new_key="$1"
+        shift
+        ;;
+      --keep-old-key)
+        keep_old_key=true
         shift
         ;;
       --all)
@@ -266,7 +271,13 @@ agevault_rotate() {
 
   for f in "$@"; do
     get_age_recipients_file "$f"
-    sed_i "s/$old_pub/$new_pub/" "$_AGE_RECIPIENTS_FILE"
+    if [ "$keep_old_key" = true ]; then
+      if ! grep -qF "$new_pub" "$_AGE_RECIPIENTS_FILE"; then
+        sed_i "s/$old_pub/$old_pub\n$new_pub/" "$_AGE_RECIPIENTS_FILE"
+      fi
+    else
+      sed_i "s/$old_pub/$new_pub/" "$_AGE_RECIPIENTS_FILE"
+    fi
     agevault_reencrypt "$f"
   done
 }
@@ -526,6 +537,7 @@ Commands:
   rotate        Re-encrypt file(s) with a new key (and update recipients file)
                 Options:
                   --new-key <file>  Path to the new age private key (default: ./age.key)
+                  --keep-old-key    Keep old key in recipients (both old and new can decrypt)
                   --all             Rotate all '*.age' files tracked by Git
   edit          Edit encrypted file(s) securely
   run           Decrypt and load file(s) into environment, then run command
@@ -621,9 +633,11 @@ _comp_cmd_agevault() {
       ;;
     rotate)
       local has_new_key=false
+      local has_keep_old_key=false
       local has_all=false
       for word in "${COMP_WORDS[@]:1}"; do
         [[ "$word" == "--new-key" ]] && has_new_key=true
+        [[ "$word" == "--keep-old-key" ]] && has_keep_old_key=true
         [[ "$word" == "--all" ]] && has_all=true
       done
 
@@ -634,6 +648,7 @@ _comp_cmd_agevault() {
       else
         local opts=""
         [[ "$has_new_key" == "false" ]] && opts="--new-key"
+        [[ "$has_keep_old_key" == "false" ]] && opts="$opts --keep-old-key"
         opts="$opts --all"
         COMPREPLY=( $(compgen -W "$opts" -f -- "$cur") )
       fi
@@ -722,6 +737,7 @@ case $state in
         # Options are listed first, then positional arguments
         _arguments \
           '--new-key[Path to new age key file]:file:_files' \
+          '--keep-old-key[Keep old key in recipients]' \
           '--all[Rotate all .age files tracked by Git]' \
           '*:files:_files'
         ;;
