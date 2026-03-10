@@ -1,3 +1,48 @@
+# Release Notes - agevault v1.4.0
+
+## v1.4.0 - Keep Old Key on Rotation (March 10, 2026)
+
+### 🎉 What's New
+
+#### New `--keep-old-key` Option for Rotate Command
+- **Preserve old key during rotation** - Keep the old public key in the recipients file so both old and new keys can decrypt
+- **CI/CD friendly** - Rotate keys in CI/CD pipelines without breaking local decryption with the previous key
+- **Idempotent** - Running `--keep-old-key` multiple times does not duplicate the new key in the recipients file
+
+### ✨ Features
+
+#### Enhanced Rotate Command
+- **`--keep-old-key` option** - Instead of replacing the old public key, appends the new one alongside it
+- **Duplicate prevention** - Automatically skips adding the new key if it already exists in the recipients file
+- **Shell completion** - Updated bash and zsh completions with `--keep-old-key` support
+
+### 🔧 Usage Examples
+
+**Standard rotation (replaces old key):**
+```sh
+agevault rotate --new-key ./new.key secrets.age
+```
+
+**Rotation keeping old key (both can decrypt):**
+```sh
+agevault rotate --new-key ./new.key --keep-old-key secrets.age
+```
+
+**Rotate all tracked files keeping old key:**
+```sh
+agevault rotate --new-key ./new.key --keep-old-key --all
+```
+
+### 🛠️ Use Case
+
+When rotating keys in a CI/CD pipeline (e.g. GitLab CI/CD), re-encrypted `.age` files are deployed to servers. With `--keep-old-key`, developers can still decrypt locally using the previous key without needing the new one, making iterative testing easier.
+
+### 🧪 Testing
+- Verifies both old and new keys can decrypt after rotation with `--keep-old-key`
+- Verifies idempotency — repeated runs do not duplicate recipients
+
+---
+
 # Release Notes - agevault v1.3.1
 
 ## v1.3.1 - Fail Early and Documentation Polish (February 3, 2026)

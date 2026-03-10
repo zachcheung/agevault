@@ -53,6 +53,7 @@ By default, agevault expects an age recipients file named `.age.txt` in the same
 | cat        | Decrypt and print to stdout                                    | agevault cat secrets.age                             |
 | reencrypt  | Re-encrypt file(s) with updated recipients file                | agevault reencrypt secrets.age                       |
 | rotate     | Re-encrypt file(s) with a new key (and update recipients file) | agevault rotate secrets.age                          |
+|            | Options: `--keep-old-key` - Keep old key in recipients         | agevault rotate --keep-old-key secrets.age           |
 | edit       | Edit encrypted file(s) securely                                | agevault edit secrets.age                            |
 | run        | Decrypt and load file(s) into environment, then run command    | agevault run env.age -- npm start                    |
 |            | Options: `--env` - Load files as environment variables         | agevault run --env secrets.env.age -- npm start      |
